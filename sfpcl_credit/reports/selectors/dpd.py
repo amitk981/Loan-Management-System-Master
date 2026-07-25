@@ -11,7 +11,7 @@ from sfpcl_credit.reports.errors import (
     ReportValidation,
 )
 from sfpcl_credit.reports.pagination import paginate
-from sfpcl_credit.reports.query import as_of_date, reject_unknown
+from sfpcl_credit.reports.query import as_of_date, ordering, reject_unknown
 
 
 PERMISSION = "reports.dpd.read"
@@ -27,7 +27,7 @@ SOP_BUCKETS = {
 def select(*, actor, query_params):
     reject_unknown(
         query_params,
-        {"as_of_date", "sop_bucket", "page", "page_size"},
+        {"as_of_date", "sop_bucket", "ordering", "page", "page_size"},
     )
     permissions = set(auth_service.effective_permission_codes(actor))
     if (
@@ -63,9 +63,23 @@ def select(*, actor, query_params):
         queryset = queryset.filter(sop_bucket=bucket)
     rows, pagination = paginate(
         queryset.order_by(
-            "-days_past_due",
-            "loan_account__loan_account_number",
-            "dpd_status_id",
+            *ordering(
+                query_params,
+                allowed={
+                    "loan_account_number": "loan_account__loan_account_number",
+                    "borrower_name": "loan_account__member__display_name",
+                    "as_of_date": "as_of_date",
+                    "days_past_due": "days_past_due",
+                    "sop_bucket": "sop_bucket",
+                    "total_overdue_amount": "total_overdue_amount",
+                    "principal_outstanding": "loan_account__principal_outstanding",
+                },
+                default=(
+                    "-days_past_due",
+                    "loan_account__loan_account_number",
+                    "dpd_status_id",
+                ),
+            )
         ),
         query_params,
     )

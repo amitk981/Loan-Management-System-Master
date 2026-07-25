@@ -6,7 +6,7 @@ from sfpcl_credit.loans.modules.loan_account_read import (
 )
 from sfpcl_credit.reports.errors import ReportPermissionDenied
 from sfpcl_credit.reports.pagination import paginate
-from sfpcl_credit.reports.query import reject_unknown
+from sfpcl_credit.reports.query import ordering, reject_unknown
 
 
 # Source §40.3 defines no report-specific permission. Slice 012A therefore maps
@@ -15,7 +15,7 @@ PERMISSION = "finance.disbursement.readiness"
 
 
 def select(*, actor, query_params):
-    reject_unknown(query_params, {"page", "page_size"})
+    reject_unknown(query_params, {"ordering", "page", "page_size"})
     permissions = set(auth_service.effective_permission_codes(actor))
     if not actor.can_authenticate() or PERMISSION not in permissions:
         raise ReportPermissionDenied
@@ -36,7 +36,20 @@ def select(*, actor, query_params):
         )
     )
     rows, pagination = paginate(
-        queryset.order_by("-initiated_at", "-disbursement_id"),
+        queryset.order_by(
+            *ordering(
+                query_params,
+                allowed={
+                    "loan_account_number": "loan_account__loan_account_number",
+                    "borrower_name": "loan_account__member__display_name",
+                    "disbursement_amount": "disbursement_amount",
+                    "authorisation_status": "authorisation_status",
+                    "bank_transfer_status": "bank_transfer_status",
+                    "initiated_at": "initiated_at",
+                },
+                default=("-initiated_at", "-disbursement_id"),
+            )
+        ),
         query_params,
     )
     return [_serialize(row) for row in rows], pagination

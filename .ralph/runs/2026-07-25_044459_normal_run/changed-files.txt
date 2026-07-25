@@ -1,0 +1,14 @@
+ M sfpcl-lms/src/pages/reports/ReportsMIS.tsx
+ M sfpcl_credit/reports/query.py
+ M sfpcl_credit/reports/selectors/application_pipeline.py
+ M sfpcl_credit/reports/selectors/compliance_dashboard.py
+ M sfpcl_credit/reports/selectors/disbursement_pending.py
+ M sfpcl_credit/reports/selectors/documentation_readiness.py
+ M sfpcl_credit/reports/selectors/dpd.py
+ M sfpcl_credit/reports/selectors/loan_portfolio.py
+ M sfpcl_credit/tests/test_report_api.py
+?? .ralph/runs/2026-07-25_044459_normal_run/
+?? sfpcl-lms/e2e/reports-exports-audit-explorer.e2e.spec.ts
+?? sfpcl-lms/src/pages/reports/ReportsMIS.test.tsx
+?? sfpcl-lms/src/services/reportApi.test.ts
+?? sfpcl-lms/src/services/reportApi.ts

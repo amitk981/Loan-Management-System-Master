@@ -8,7 +8,7 @@ from sfpcl_credit.approvals.modules.read_scope import has_active_audit_read_scop
 from sfpcl_credit.identity.modules import auth_service
 from sfpcl_credit.reports.errors import ReportPermissionDenied, ReportValidation
 from sfpcl_credit.reports.pagination import paginate
-from sfpcl_credit.reports.query import inclusive_date_range, reject_unknown
+from sfpcl_credit.reports.query import inclusive_date_range, ordering, reject_unknown
 
 
 PERMISSION = "reports.application_pipeline.read"
@@ -24,6 +24,7 @@ def select(*, actor, query_params):
             "stage",
             "page",
             "page_size",
+            "ordering",
         },
     )
     permissions = set(auth_service.effective_permission_codes(actor))
@@ -69,8 +70,20 @@ def select(*, actor, query_params):
         queryset = queryset.filter(current_stage=stage)
     rows, pagination = paginate(
         queryset.order_by(
-            "-date_received",
-            "-loan_request_register_entry_id",
+            *ordering(
+                query_params,
+                allowed={
+                    "application_reference_number": "application_reference_number",
+                    "borrower_name": "borrower_name",
+                    "date_received": "date_received",
+                    "requested_amount": "requested_amount",
+                    "current_stage": "current_stage",
+                },
+                default=(
+                    "-date_received",
+                    "-loan_request_register_entry_id",
+                ),
+            ),
         ),
         query_params,
     )

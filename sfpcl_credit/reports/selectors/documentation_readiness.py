@@ -5,11 +5,11 @@ from sfpcl_credit.reports.errors import (
     ReportValidation,
 )
 from sfpcl_credit.reports.pagination import paginate
-from sfpcl_credit.reports.query import reject_unknown
+from sfpcl_credit.reports.query import ordering, reject_unknown
 
 
 def select(*, actor, query_params):
-    reject_unknown(query_params, {"status", "page", "page_size"})
+    reject_unknown(query_params, {"status", "ordering", "page", "page_size"})
     queryset, error_code = document_checklist_access.scope_post_sanction_checklists(
         actor=actor,
         queryset=DocumentChecklist.objects.select_related(
@@ -29,7 +29,18 @@ def select(*, actor, query_params):
         else:
             queryset = queryset.filter(checklist_status=status)
     rows, pagination = paginate(
-        queryset.order_by("-updated_at", "-document_checklist_id"),
+        queryset.order_by(
+            *ordering(
+                query_params,
+                allowed={
+                    "application_reference_number": "loan_application__application_reference_number",
+                    "borrower_name": "loan_application__member__display_name",
+                    "checklist_status": "checklist_status",
+                    "updated_at": "updated_at",
+                },
+                default=("-updated_at", "-document_checklist_id"),
+            )
+        ),
         query_params,
     )
     return [_serialize(row) for row in rows], pagination

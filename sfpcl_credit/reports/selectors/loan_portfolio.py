@@ -8,7 +8,7 @@ from sfpcl_credit.reports.errors import (
     ReportValidation,
 )
 from sfpcl_credit.reports.pagination import paginate
-from sfpcl_credit.reports.query import as_of_date, reject_unknown
+from sfpcl_credit.reports.query import as_of_date, ordering, reject_unknown
 
 
 PERMISSION = "reports.portfolio.read"
@@ -25,7 +25,10 @@ STATUSES = {
 
 
 def select(*, actor, query_params):
-    reject_unknown(query_params, {"as_of_date", "status", "page", "page_size"})
+    reject_unknown(
+        query_params,
+        {"as_of_date", "status", "ordering", "page", "page_size"},
+    )
     permissions = set(auth_service.effective_permission_codes(actor))
     if not actor.can_authenticate() or PERMISSION not in permissions:
         raise ReportPermissionDenied
@@ -43,7 +46,24 @@ def select(*, actor, query_params):
             raise ReportValidation({"status": "Unsupported loan account status."})
         queryset = queryset.filter(loan_account_status=status)
     rows, pagination = paginate(
-        queryset.order_by("-created_at", "-loan_account_id"),
+        queryset.order_by(
+            *ordering(
+                query_params,
+                allowed={
+                    "loan_account_number": "loan_account_number",
+                    "borrower_name": "member__display_name",
+                    "loan_account_status": "loan_account_status",
+                    "sanctioned_amount": "sanctioned_amount",
+                    "disbursed_amount": "disbursed_amount",
+                    "principal_outstanding": "principal_outstanding",
+                    "interest_outstanding": "interest_outstanding",
+                    "total_outstanding": "total_outstanding",
+                    "repayment_date": "repayment_date",
+                    "created_at": "created_at",
+                },
+                default=("-created_at", "-loan_account_id"),
+            )
+        ),
         query_params,
     )
     return [_serialize(row) for row in rows], pagination

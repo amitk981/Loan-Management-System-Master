@@ -18,6 +18,29 @@ def reject_unknown(query_params, allowed):
         )
 
 
+def ordering(query_params, *, allowed, default):
+    raw_value = query_params.get("ordering")
+    if not raw_value:
+        return tuple(default)
+    fields = []
+    for raw_field in raw_value.split(","):
+        token = raw_field.strip()
+        descending = token.startswith("-")
+        public_name = token[1:] if descending else token
+        model_name = allowed.get(public_name)
+        if not model_name:
+            raise ReportValidation(
+                {"ordering": f"Unsupported ordering field: {public_name or raw_field}."}
+            )
+        fields.append(f"-{model_name}" if descending else model_name)
+    for stable_field in default:
+        if stable_field.lstrip("-") not in {
+            field.lstrip("-") for field in fields
+        }:
+            fields.append(stable_field)
+    return tuple(fields)
+
+
 def optional_date(query_params, field, default=None):
     raw_value = query_params.get(field)
     if raw_value in (None, ""):

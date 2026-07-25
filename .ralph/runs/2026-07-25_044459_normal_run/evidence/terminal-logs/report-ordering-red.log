@@ -1,0 +1,17 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_application_pipeline_applies_whitelisted_backend_ordering (sfpcl_credit.tests.test_report_api.ReportApiTests.test_application_pipeline_applies_whitelisted_backend_ordering)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_044459_normal_run/sfpcl_credit/tests/test_report_api.py", line 421, in test_application_pipeline_applies_whitelisted_backend_ordering
+    self.assertEqual(ordered.status_code, 200, ordered.content)
+AssertionError: 400 != 200 : b'{"success": false, "error": {"code": "VALIDATION_ERROR", "message": "Report query failed validation.", "details": {}, "field_errors": {"ordering": "Unknown query parameter."}}, "meta": {"request_id": null, "timestamp": "2026-07-24T23:21:08.178768Z", "api_version": "v1"}}'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.019s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

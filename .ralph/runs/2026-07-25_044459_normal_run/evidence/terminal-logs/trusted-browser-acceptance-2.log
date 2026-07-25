@@ -1,0 +1,26 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_044459_normal_run/.ralph/runs/2026-07-25_044459_normal_run/evidence/screenshots/run-2 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/reports-exports-audit-explorer.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/reports-exports-audit-explorer.e2e.spec.ts
+
+[2m[WebServer] [22m[24/Jul/2026 23:41:11] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22mUnauthorized: /api/v1/notifications/
+[2m[WebServer] [22m[24/Jul/2026 23:41:15] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+[2m[WebServer] [22m[24/Jul/2026 23:41:15] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 401 223
+  ✓  1 [chromium] › reports-exports-audit-explorer.e2e.spec.ts:41:5 › S69 report results retain backend filters, ordering, pagination, and reconciliation (2.9s)
+
+  1 passed (56.0s)
+
+Duration milliseconds: 56615
+Exit code: 0
+Screenshot evidence exit code: 0
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_044459_normal_run/.ralph/runs/2026-07-25_044459_normal_run/evidence/trusted-browser-screenshots-2.sha256

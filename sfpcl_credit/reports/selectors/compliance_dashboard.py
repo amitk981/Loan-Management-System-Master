@@ -4,7 +4,7 @@ from sfpcl_credit.compliance.models import (
     Section186Tracker,
 )
 from sfpcl_credit.identity.modules import auth_service
-from sfpcl_credit.reports.errors import ReportPermissionDenied
+from sfpcl_credit.reports.errors import ReportPermissionDenied, ReportValidation
 from sfpcl_credit.reports.pagination import paginate
 from sfpcl_credit.reports.query import financial_year, reject_unknown
 
@@ -17,7 +17,10 @@ OWNER_PERMISSIONS = {
 
 
 def select(*, actor, query_params):
-    reject_unknown(query_params, {"financial_year", "page", "page_size"})
+    reject_unknown(
+        query_params,
+        {"financial_year", "ordering", "page", "page_size"},
+    )
     permissions = set(auth_service.effective_permission_codes(actor))
     if (
         not actor.can_authenticate()
@@ -42,7 +45,35 @@ def select(*, actor, query_params):
         *(_serialize_section(row) for row in section_rows.order_by("quarter", "section_186_tracker_id")),
         *(_serialize_nbfc(row) for row in nbfc_rows.order_by("quarter", "nbfc_principal_test_id")),
     ]
+    rows = _ordered_rows(rows, query_params.get("ordering"))
     return paginate(rows, query_params)
+
+
+def _ordered_rows(rows, raw_ordering):
+    if not raw_ordering:
+        return rows
+    allowed = {
+        "report_type",
+        "financial_year",
+        "quarter",
+        "review_status",
+        "prepared_at",
+    }
+    fields = []
+    for raw_field in raw_ordering.split(","):
+        field = raw_field.strip()
+        descending = field.startswith("-")
+        name = field[1:] if descending else field
+        if name not in allowed:
+            raise ReportValidation(
+                {"ordering": f"Unsupported ordering field: {name or raw_field}."}
+            )
+        fields.append((name, descending))
+    ordered = list(rows)
+    ordered.sort(key=lambda row: row["report_record_id"])
+    for name, descending in reversed(fields):
+        ordered.sort(key=lambda row: row[name], reverse=descending)
+    return ordered
 
 
 def _serialize_section(row):

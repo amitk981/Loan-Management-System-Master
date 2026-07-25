@@ -1,0 +1,364 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run --run src/pages/reports/ReportsMIS.test.tsx
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_044459_normal_run/sfpcl-lms
+
+ ❯ src/pages/reports/ReportsMIS.test.tsx (1 test | 1 failed) 68ms
+   × ReportsMIS report wiring > renders reconciled portfolio rows and totals from the backend page 68ms
+     → Unable to find an element with the text: Loading report results…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mPortfolio analytics, compliance reporting, DPD analysis and CFO MIS.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-3"[39m
+        [36m>[39m
+          [36m<select[39m
+            [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+          [36m>[39m
+            [36m<option>[39m
+              [0mQ1 FY 2025–26[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0mFY 2024–25 Full Year[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0mQ4 FY 2024–25[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0mQ3 FY 2024–25[0m
+            [36m</option>[39m
+          [36m</select>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-download"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15V3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m7 10 5 5 5-5"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mExport[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mPortfolio Summary[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mDPD & Ageing Analysis[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mCompliance MIS[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mMember Exposure[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mCustom Reports[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mb-1"[39m
+            [36m>[39m
+              [0mTotal Loan Portfolio[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+            [36m>[39m
+              [0m₹2,42,00,000[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-1 text-xs mt-1 font-medium text-green-600"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-trending-up"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 7h6v6"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m22 7-8.5 8.5-5-5L2 17"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0m+12%[0m
+              [0m vs prior quarter[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mb-1"[39m
+            [36m>[39m
+              [0mActive Loan Accounts[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+            [36m>[39m
+              [0m23[0m
+            [36m</div>[39m
+            ...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/reports/ReportsMIS.test.tsx > ReportsMIS report wiring > renders reconciled portfolio rows and totals from the backend page
+TestingLibraryElementError: Unable to find an element with the text: Loading report results…. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"p-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex items-center justify-between mb-6"[39m
+      [36m>[39m
+        [36m<div>[39m
+          [36m<h1[39m
+            [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+          [36m>[39m
+            [0mReports & MIS Center[0m
+          [36m</h1>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-slate-500 mt-1"[39m
+          [36m>[39m
+            [0mPortfolio analytics, compliance reporting, DPD analysis and CFO MIS.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-3"[39m
+        [36m>[39m
+          [36m<select[39m
+            [33mclass[39m=[32m"text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"[39m
+          [36m>[39m
+            [36m<option>[39m
+              [0mQ1 FY 2025–26[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0mFY 2024–25 Full Year[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0mQ4 FY 2024–25[0m
+            [36m</option>[39m
+            [36m<option>[39m
+              [0mQ3 FY 2024–25[0m
+            [36m</option>[39m
+          [36m</select>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-download"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"15"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"15"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 15V3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m7 10 5 5 5-5"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mExport[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"border-b border-slate-200 mb-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex gap-1 overflow-x-auto"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-green-600 text-green-700"[39m
+          [36m>[39m
+            [0mPortfolio Summary[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mDPD & Ageing Analysis[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mCompliance MIS[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mMember Exposure[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors border-transparent text-slate-500 hover:text-slate-700"[39m
+          [36m>[39m
+            [0mCustom Reports[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"grid grid-cols-2 lg:grid-cols-4 gap-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mb-1"[39m
+            [36m>[39m
+              [0mTotal Loan Portfolio[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+            [36m>[39m
+              [0m₹2,42,00,000[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-1 text-xs mt-1 font-medium text-green-600"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-trending-up"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"12"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"12"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M16 7h6v6"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m22 7-8.5 8.5-5-5L2 17"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0m+12%[0m
+              [0m vs prior quarter[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-white border border-slate-200 rounded-xl p-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xs text-slate-500 mb-1"[39m
+            [36m>[39m
+              [0mActive Loan Accounts[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"text-xl font-bold text-slate-900"[39m
+            [36m>[39m
+              [0m23[0m
+            [36m</div>[39m
+            ...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/reports/ReportsMIS.test.tsx:65:19
+     63|     render(<ReportsMIS />);
+     64| 
+     65|     expect(screen.getByText('Loading report results…')).toBeTruthy();
+       |                   ^
+     66|     expect(await screen.findByText('LN-REPORT-001')).toBeTruthy();
+     67|     expect(screen.getByText('Seeded Report Member')).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  04:53:48
+   Duration  909ms (transform 176ms, setup 0ms, collect 317ms, tests 68ms, environment 302ms, prepare 41ms)
+

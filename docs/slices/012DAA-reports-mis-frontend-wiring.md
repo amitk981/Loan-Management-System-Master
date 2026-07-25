@@ -1,7 +1,7 @@
 # Slice 012DAA: Reports and MIS Frontend Wiring
 
 ## Status
-Not Started
+Complete
 
 ## Origin
 Oversized slice: `012DA`

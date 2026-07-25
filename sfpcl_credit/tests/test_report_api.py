@@ -150,7 +150,10 @@ class ReportApiTests(TestCase):
         )
 
         response = self.client.get(
-            "/api/v1/reports/documentation-readiness/?status=pending",
+            (
+                "/api/v1/reports/documentation-readiness/"
+                "?status=pending&ordering=-updated_at"
+            ),
             **self._auth(self.auditor),
         )
 
@@ -384,6 +387,48 @@ class ReportApiTests(TestCase):
             self.assertEqual(response.status_code, 400, response.content)
             self.assertIn(field, response.json()["error"]["field_errors"])
 
+    def test_application_pipeline_applies_whitelisted_backend_ordering(self):
+        application = LoanApplication.objects.create(
+            application_reference_number="LR-REPORT-002",
+            member=self.member,
+            borrower_type=self.member.member_type,
+            application_date=date(2026, 4, 2),
+            received_by_user=self.auditor,
+            created_by_user=self.auditor,
+            current_stage=LoanApplication.STAGE_CREDIT_ASSESSMENT,
+            application_status=LoanApplication.STATUS_REFERENCE_GENERATED,
+            completeness_status=LoanApplication.COMPLETENESS_COMPLETE,
+        )
+        LoanRequestRegisterEntry.objects.create(
+            loan_application=application,
+            application_reference_number="LR-REPORT-002",
+            member=self.member,
+            date_received=date(2026, 4, 2),
+            reference_generated_date=date(2026, 4, 2),
+            received_channel="assisted_digital",
+            received_by_user=self.auditor,
+            borrower_name="Later Report Member",
+            requested_amount="500000.00",
+            current_stage=LoanApplication.STAGE_CREDIT_ASSESSMENT,
+        )
+
+        ordered = self.client.get(
+            "/api/v1/reports/application-pipeline/?ordering=requested_amount",
+            **self._auth(self.auditor),
+        )
+        rejected = self.client.get(
+            "/api/v1/reports/application-pipeline/?ordering=pan_encrypted",
+            **self._auth(self.auditor),
+        )
+
+        self.assertEqual(ordered.status_code, 200, ordered.content)
+        self.assertEqual(
+            [row["application_reference_number"] for row in ordered.json()["data"]],
+            ["LR-REPORT-001", "LR-REPORT-002"],
+        )
+        self.assertEqual(rejected.status_code, 400, rejected.content)
+        self.assertIn("ordering", rejected.json()["error"]["field_errors"])
+
     def test_documentation_readiness_rejects_unknown_status_and_parameters(self):
         self._grant(self.auditor_role, "documents.checklist.read")
         invalid_status = self.client.get(
@@ -470,6 +515,7 @@ class PortfolioReportApiTests(TestCase):
                 "/api/v1/reports/loan-portfolio/"
                 f"?as_of_date={timezone.localdate().isoformat()}"
                 f"&status={self.account.loan_account_status}"
+                "&ordering=-total_outstanding"
             ),
             **self._auth(),
         )
@@ -559,7 +605,7 @@ class PortfolioReportApiTests(TestCase):
         response = self.client.get(
             (
                 "/api/v1/reports/dpd/?as_of_date=2026-06-30"
-                "&sop_bucket=one_to_two_years"
+                "&sop_bucket=one_to_two_years&ordering=-days_past_due"
             ),
             **self._auth(),
         )
@@ -662,7 +708,7 @@ class DisbursementPendingReportApiTests(TestCase):
         self.assertEqual(initiated.status_code, 200, initiated.content)
 
         response = self.client.get(
-            "/api/v1/reports/disbursement-pending/",
+            "/api/v1/reports/disbursement-pending/?ordering=-initiated_at",
             **self.fixture._auth(self.reader),
         )
 
@@ -778,7 +824,7 @@ class ComplianceDashboardReportApiTests(TestCase):
         response = self.client.get(
             (
                 "/api/v1/reports/compliance-dashboard/"
-                "?financial_year=FY2026-27"
+                "?financial_year=FY2026-27&ordering=-report_type"
             ),
             **self.fixture._auth(self.actor),
         )
