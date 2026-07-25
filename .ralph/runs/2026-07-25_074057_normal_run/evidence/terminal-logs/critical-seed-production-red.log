@@ -1,0 +1,39 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_production_settings_refuse_all_demo_seed_commands (sfpcl_credit.tests.test_production_demo_isolation.ProductionDemoIdentityTests.test_production_settings_refuse_all_demo_seed_commands)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_production_demo_isolation.py", line 222, in test_production_settings_refuse_all_demo_seed_commands
+    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "<string>", line 19, in <module>
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 194, in call_command
+    return command.execute(*args, **defaults)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/base.py", line 459, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "<WORKTREE>/sfpcl_credit/identity/management/commands/seed_critical_uat_e2e_fixture.py", line 53, in handle
+    self._enforce_e2e_guard()
+  File "<WORKTREE>/sfpcl_credit/identity/management/commands/seed_critical_uat_e2e_fixture.py", line 197, in _enforce_e2e_guard
+    raise CommandError(
+django.core.management.base.CommandError: seed_critical_uat_e2e_fixture is for an isolated local Playwright database only. Set SFPCL_DEBUG=true and SFPCL_ALLOW_E2E_SEED=true.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 21, in <module>
+AssertionError: seed_critical_uat_e2e_fixture is for an isolated local Playwright database only. Set SFPCL_DEBUG=true and SFPCL_ALLOW_E2E_SEED=true.
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.524s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

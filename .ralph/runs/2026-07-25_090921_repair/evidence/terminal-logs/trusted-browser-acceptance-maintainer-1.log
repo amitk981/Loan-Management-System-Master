@@ -1,0 +1,84 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/critical-uat-smoke.e2e.spec.ts
+
+[2m[WebServer] [22m[25/Jul/2026 03:54:42] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+[2m[WebServer] [22m(node:43420) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[25/Jul/2026 03:54:47] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "POST /api/v1/auth/login/ HTTP/1.1" 200 1315
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "GET /api/v1/auth/me/ HTTP/1.1" 200 1530
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "OPTIONS /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "OPTIONS /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 2694
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "GET /api/v1/dashboard/ HTTP/1.1" 200 1040
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 2694
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "GET /api/v1/dashboard/ HTTP/1.1" 200 1040
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[25/Jul/2026 03:54:48] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[25/Jul/2026 03:54:49] "OPTIONS /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:49] "OPTIONS /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:49] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4549
+[2m[WebServer] [22m[25/Jul/2026 03:54:50] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4549
+[2m[WebServer] [22m[25/Jul/2026 03:54:50] "OPTIONS /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/disbursements/initiate/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:50] "POST /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/disbursements/initiate/ HTTP/1.1" 200 319
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4007
+[2m[WebServer] [22m[25/Jul/2026 03:54:51,433] - Broken pipe from ('127.0.0.1', 57590)
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "POST /api/v1/auth/login/ HTTP/1.1" 200 1335
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "GET /api/v1/auth/me/ HTTP/1.1" 200 1101
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 1264
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "GET /api/v1/dashboard/ HTTP/1.1" 200 914
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 1264
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "GET /api/v1/dashboard/ HTTP/1.1" 200 914
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4819
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "OPTIONS /api/v1/disbursements/0fbadca3-c109-42ca-897c-fe1009d1d1c4/authorise/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4819
+[2m[WebServer] [22m[25/Jul/2026 03:54:51] "POST /api/v1/disbursements/0fbadca3-c109-42ca-897c-fe1009d1d1c4/authorise/ HTTP/1.1" 200 373
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 280
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "POST /api/v1/auth/login/ HTTP/1.1" 200 1315
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "GET /api/v1/auth/me/ HTTP/1.1" 200 1530
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 2694
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "GET /api/v1/dashboard/ HTTP/1.1" 200 1040
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 2694
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "GET /api/v1/dashboard/ HTTP/1.1" 200 1040
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "OPTIONS /api/v1/notifications/?category=finance HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:54:52] "GET /api/v1/notifications/?category=finance HTTP/1.1" 200 1715
+[2m[WebServer] [22m[25/Jul/2026 03:54:53] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4739
+[2m[WebServer] [22m[25/Jul/2026 03:54:53] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4739
+[2m[WebServer] [22m[25/Jul/2026 03:54:53] "OPTIONS /api/v1/disbursements/0fbadca3-c109-42ca-897c-fe1009d1d1c4/mark-transfer-successful/ HTTP/1.1" 200 0
+[2m[WebServer] [22mBad Request: /api/v1/disbursements/0fbadca3-c109-42ca-897c-fe1009d1d1c4/mark-transfer-successful/
+[2m[WebServer] [22m[25/Jul/2026 03:54:53] "POST /api/v1/disbursements/0fbadca3-c109-42ca-897c-fe1009d1d1c4/mark-transfer-successful/ HTTP/1.1" 400 323
+  ✘  1 [chromium] › critical-uat-smoke.e2e.spec.ts:27:5 › critical UAT tracer proves the automated public journeys and retains the manual boundary (8.4s)
+
+
+  1) [chromium] › critical-uat-smoke.e2e.spec.ts:27:5 › critical UAT tracer proves the automated public journeys and retains the manual boundary › UAT-001/011/012/013: standard physical-share loan reaches active disbursement 
+
+    Error: {"success":false,"error":{"code":"VALIDATION_ERROR","message":"Transfer success failed validation.","details":{},"field_errors":{"bank_reference_number":["This field is required."]}},"meta":{"request_id":"6908c971-d03b-4601-83aa-59a3c2bcb642","timestamp":"2026-07-25T03:54:53.755152Z","api_version":"v1"}}
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32mtrue[39m
+    Received: [31mfalse[39m
+
+      519 | const successEnvelope = async (response: { ok(): boolean; json(): Promise<unknown> }) => {
+      520 |   const envelope = await response.json() as { success: boolean; data: Record<string, unknown> };
+    > 521 |   expect(response.ok(), JSON.stringify(envelope)).toBe(true);
+          |                                                   ^
+      522 |   expect(envelope.success).toBe(true);
+      523 |   return envelope;
+      524 | };
+        at successEnvelope (/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_074057_normal_run/sfpcl-lms/e2e/critical-uat-smoke.e2e.spec.ts:521:51)
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_074057_normal_run/sfpcl-lms/e2e/critical-uat-smoke.e2e.spec.ts:82:30
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_074057_normal_run/sfpcl-lms/e2e/critical-uat-smoke.e2e.spec.ts:31:3
+
+  1 failed
+    [chromium] › critical-uat-smoke.e2e.spec.ts:27:5 › critical UAT tracer proves the automated public journeys and retains the manual boundary 

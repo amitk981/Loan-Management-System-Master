@@ -1,0 +1,13 @@
+ M sfpcl-lms/playwright.seed.ts
+ M sfpcl-lms/src/playwright.seed.test.ts
+ M sfpcl_credit/tests/test_production_demo_isolation.py
+?? .ralph/runs/2026-07-25_074057_normal_run/
+?? .ralph/runs/2026-07-25_082003_repair/
+?? .ralph/runs/2026-07-25_083817_repair/
+?? .ralph/runs/2026-07-25_085034_repair/
+?? .ralph/runs/2026-07-25_090921_repair/
+?? .ralph/runs/2026-07-25_094752_repair/
+?? .ralph/runs/2026-07-25_101057_repair/
+?? sfpcl-lms/e2e/critical-uat-smoke.e2e.spec.ts
+?? sfpcl_credit/identity/management/commands/seed_critical_uat_e2e_fixture.py
+?? sfpcl_credit/tests/test_seed_critical_uat_e2e_fixture.py

@@ -1,0 +1,1211 @@
+{
+  "guards": [
+    "SFPCL_DEBUG=true",
+    "SFPCL_ALLOW_E2E_SEED=true",
+    "isolated SFPCL_DB_PATH"
+  ],
+  "commands": [
+    "seed_role_catalogue",
+    "seed_e2e_users",
+    "seed_portal_e2e_fixture",
+    "seed_epic_009_e2e_fixture",
+    "seed_critical_uat_e2e_fixture"
+  ],
+  "providers": [
+    "manual/fake SAP",
+    "manual/fake bank",
+    "local document storage",
+    "queued communications"
+  ],
+  "live_providers": false,
+  "isolation": "Playwright config deletes and migrates the isolated database before every run.",
+  "run": {
+    "duration_ms": 18700,
+    "test_count": 1,
+    "skipped": 0,
+    "public_results": {
+      "standardLoan": {
+        "disbursement_id": "784ceb62-918e-45bb-bf47-d0fb43ccf690",
+        "bank_transfer_status": "successful",
+        "loan_account_status": "active",
+        "disbursement_advice_communication_id": "46f579af-550e-479c-b783-99280046c41d",
+        "initial_payment_sap_posting": {
+          "posting_status": "pending",
+          "sap_posting_reference_masked": null
+        }
+      },
+      "approvalBoundaries": {
+        "belowThresholdCase": {
+          "approval_case_id": "8b4481fb-0c6c-4744-8db9-1e0edc99a489",
+          "cycle_number": 1,
+          "approval_type": "sanction",
+          "related_entity_type": "loan_application",
+          "related_entity_id": "541d5fbf-b302-40ed-8f45-486c7b0b3936",
+          "loan_application_id": "541d5fbf-b302-40ed-8f45-486c7b0b3936",
+          "application_reference_number": "LO000008L4",
+          "amount": "400000.00",
+          "current_status": "approved",
+          "decision_date": "2026-07-25",
+          "version": 2,
+          "approval_matrix_rule_id": "9634efd7-458f-46e3-8770-c8dd3d1614d9",
+          "approval_matrix_rule_version": "portal-e2e-rule-v1",
+          "sanction_committee_id": "e9e540df-3789-4bb7-9744-56d2e9aa7a5b",
+          "sanction_committee_version": "portal-e2e-committee-v1",
+          "route_approvers": [
+            {
+              "role_code": "cfo",
+              "user_id": "3a994730-0a2b-4b15-a59c-19ad81cae8b4",
+              "full_name": "CFO"
+            },
+            {
+              "role_code": "director",
+              "user_id": "f8c977d6-9048-42e5-be64-e1f170664133",
+              "full_name": "Director"
+            }
+          ],
+          "required_approvers": [
+            {
+              "role_code": "cfo",
+              "user_id": "3a994730-0a2b-4b15-a59c-19ad81cae8b4",
+              "full_name": "CFO",
+              "decision": null,
+              "acted_at": null
+            },
+            {
+              "role_code": "director",
+              "user_id": "f8c977d6-9048-42e5-be64-e1f170664133",
+              "full_name": "Director",
+              "decision": null,
+              "acted_at": null
+            }
+          ],
+          "approval_actions": [],
+          "excluded_approvers": [],
+          "general_meeting_evidence_required": false,
+          "general_meeting_approval": null,
+          "conflict_block_reason": null,
+          "reason_for_approval": "Approved portal fixture.",
+          "exception_condition_code": null,
+          "exception_reason": null,
+          "matrix_projection": {
+            "approval_matrix_rule_id": "9634efd7-458f-46e3-8770-c8dd3d1614d9",
+            "version_number": "portal-e2e-rule-v1",
+            "decision_type": "loan_sanction",
+            "amount": "400000.00",
+            "amount_min": "0.00",
+            "amount_max": "500000.00",
+            "condition_code": null,
+            "decision_date": "2026-07-25",
+            "required_approver_roles": [
+              "cfo",
+              "director"
+            ],
+            "required_director_count": 1,
+            "joint_approval_required": true,
+            "register_required": "credit_sanction_register"
+          },
+          "committee_projection": {
+            "sanction_committee_id": "e9e540df-3789-4bb7-9744-56d2e9aa7a5b",
+            "version_number": "portal-e2e-committee-v1",
+            "decision_date": "2026-07-25",
+            "cfo_user_id": "3a994730-0a2b-4b15-a59c-19ad81cae8b4",
+            "director_user_ids": [
+              "f8c977d6-9048-42e5-be64-e1f170664133",
+              "ad88b7e0-0d69-4bb3-8252-e5a2e3cac494"
+            ]
+          },
+          "loan_limit_provenance": {
+            "loan_limit_assessment_id": "20000000-0000-0000-0000-000000000002",
+            "loan_application_id": "541d5fbf-b302-40ed-8f45-486c7b0b3936",
+            "final_eligible_loan_amount": "400000.00",
+            "exception_required_flag": false,
+            "calculation_rule_version": "portal-e2e-limit-v1",
+            "policy_config_id": "30000000-0000-0000-0000-000000000003",
+            "policy_name": "Portal E2E Policy",
+            "calculated_at": "2026-07-25T05:02:48.266596+00:00"
+          },
+          "review_facts": {
+            "snapshot_schema_version": "approval-review-v3",
+            "snapshot_provenance": {
+              "owner": "credit",
+              "review_decision_id": "b29aba72-4b78-4f6b-9c0c-5f13718922a3"
+            },
+            "maker_checker": {
+              "application_created_by_user_id": "d2ec9855-6a89-4732-b264-fcd785b16be1",
+              "application_received_by_user_id": "d2ec9855-6a89-4732-b264-fcd785b16be1",
+              "application_submitted_by_user_id": null,
+              "appraisal_prepared_by_user_id": "d2ec9855-6a89-4732-b264-fcd785b16be1",
+              "appraisal_reviewed_by_user_id": "d2ec9855-6a89-4732-b264-fcd785b16be1"
+            },
+            "borrower": {
+              "member_id": "9bbfdf15-79c3-4076-befe-75e5e233c628",
+              "application_reference_number": "LO000008L4",
+              "name": "Portal Contract Member",
+              "member_type": "individual_farmer",
+              "folio_number": "FOL-E2E-PORTAL",
+              "loan_type": ""
+            },
+            "nominee": {
+              "nominee_id": "b72feda8-dbea-438e-842c-fba632371c50",
+              "name": "Portal Contract Nominee"
+            },
+            "witness": null,
+            "shareholding": {
+              "holding_mode": "physical"
+            },
+            "eligibility": {
+              "eligibility_assessment_id": "10000000-0000-0000-0000-000000000001",
+              "loan_application_id": "541d5fbf-b302-40ed-8f45-486c7b0b3936",
+              "overall_result": "eligible",
+              "member_active_check": "pass",
+              "default_check": "pass",
+              "document_check": "pass",
+              "terms_acceptance_check": "pass",
+              "purpose_check": "pass",
+              "nominee_check": "pass",
+              "assessment_notes": "Eligible portal fixture.",
+              "active_member_snapshot": {
+                "supplied_to_subsidiary_flag": false,
+                "supplied_to_stepdown_flag": false
+              },
+              "assessed_by_user_id": "d2ec9855-6a89-4732-b264-fcd785b16be1",
+              "assessed_at": "2026-07-25T05:02:48.266596+00:00"
+            },
+            "loan_amounts": {
+              "requested_amount": "400000.00",
+              "eligible_amount": "400000.00",
+              "recommended_amount": "400000.00"
+            },
+            "sanction_terms": {
+              "recommended_tenure_months": 12,
+              "recommended_interest_type": "floating",
+              "recommended_security_summary": "Standard security."
+            },
+            "purpose": {
+              "category": "crop_production",
+              "description": "Crop production"
+            },
+            "compliance_checks": {
+              "member_active_check": "pass",
+              "default_check": "pass",
+              "terms_acceptance_check": "pass",
+              "purpose_check": "pass"
+            },
+            "borrowing_history": "Eligible portal fixture.",
+            "risk": {
+              "risk_assessment_id": "77bd4090-3290-40b9-a3e5-a52a29f7cbee",
+              "market_risk_rating": "low",
+              "operational_risk_rating": "low",
+              "borrower_risk_rating": "low",
+              "overall_risk_rating": "low",
+              "risk_mitigation_notes": ""
+            },
+            "documentation_completeness": {
+              "status": "complete",
+              "document_check": "pass"
+            },
+            "source_references": {
+              "application": "/api/v1/loan-applications/541d5fbf-b302-40ed-8f45-486c7b0b3936/",
+              "appraisal": "/api/v1/loan-applications/541d5fbf-b302-40ed-8f45-486c7b0b3936/appraisal-note/",
+              "eligibility": "/api/v1/loan-applications/541d5fbf-b302-40ed-8f45-486c7b0b3936/eligibility-assessment/",
+              "loan_limit": "/api/v1/loan-applications/541d5fbf-b302-40ed-8f45-486c7b0b3936/loan-limit-assessment/"
+            }
+          },
+          "workbench_summary": {
+            "borrower_name": "Portal Contract Member",
+            "member_type": "individual_farmer",
+            "requested_amount": "400000.00",
+            "recommended_amount": "400000.00",
+            "eligible_amount": "400000.00",
+            "approval_path": "CFO + one Director",
+            "exception_flag": false,
+            "related_party_flag": false,
+            "risk_rating": "low",
+            "submitted_at": "2026-07-25T05:02:48.270659Z",
+            "current_decision_status": "approved",
+            "pending_age": null
+          },
+          "available_actions": [
+            {
+              "action_code": "approve",
+              "label": "Approve",
+              "enabled": false,
+              "disabled_reason": "Approval case is not pending.",
+              "required_permission": "approvals.case.approve"
+            },
+            {
+              "action_code": "reject",
+              "label": "Reject",
+              "enabled": false,
+              "disabled_reason": "Approval case is not pending.",
+              "required_permission": "approvals.case.reject"
+            },
+            {
+              "action_code": "return",
+              "label": "Return for Clarification",
+              "enabled": false,
+              "disabled_reason": "Approval case is not pending.",
+              "required_permission": "approvals.case.return"
+            },
+            {
+              "action_code": "abstain",
+              "label": "Abstain for Conflict",
+              "enabled": false,
+              "disabled_reason": "Approval case is not pending.",
+              "required_permission": "approvals.case.approve"
+            }
+          ]
+        },
+        "atThresholdRule": {
+          "approval_matrix_rule_id": "56e66401-9a01-492a-9054-d98ded96ed82",
+          "decision_type": "loan_sanction",
+          "amount_min": "0.00",
+          "amount_max": "500000.00",
+          "condition_code": null,
+          "required_approver_roles": [
+            "cfo",
+            "director"
+          ],
+          "required_director_count": 1,
+          "authority_summary": "CFO + one Director",
+          "minimum_approver_count": 2,
+          "joint_approval_required_flag": true,
+          "register_required": "credit_sanction_register",
+          "effective_from": "2026-04-01",
+          "effective_to": null,
+          "status": "active",
+          "version_number": "seed-2026-up-to-5l"
+        },
+        "aboveThresholdRule": {
+          "approval_matrix_rule_id": "b59aa00d-bf09-42ae-9440-a4d0dacaa016",
+          "decision_type": "loan_sanction",
+          "amount_min": "500000.01",
+          "amount_max": null,
+          "condition_code": null,
+          "required_approver_roles": [
+            "cfo",
+            "director"
+          ],
+          "required_director_count": 2,
+          "authority_summary": "CFO + two Directors",
+          "minimum_approver_count": 3,
+          "joint_approval_required_flag": true,
+          "register_required": "credit_sanction_register",
+          "effective_from": "2026-04-01",
+          "effective_to": null,
+          "status": "active",
+          "version_number": "seed-2026-above-5l"
+        },
+        "exceptionRule": {
+          "approval_matrix_rule_id": "3e835106-1ae6-4364-828c-03bd9ddcad13",
+          "decision_type": "loan_sanction",
+          "amount_min": "0.00",
+          "amount_max": null,
+          "condition_code": "exceeds_permissible_limit",
+          "required_approver_roles": [
+            "cfo",
+            "director"
+          ],
+          "required_director_count": 2,
+          "authority_summary": "CFO + two Directors",
+          "minimum_approver_count": 3,
+          "joint_approval_required_flag": true,
+          "register_required": "exception_register",
+          "effective_from": "2026-04-01",
+          "effective_to": null,
+          "status": "active",
+          "version_number": "seed-2026-exceeds-limit"
+        },
+        "invalidAuthority": {
+          "code": "OBJECT_ACCESS_DENIED",
+          "message": "You cannot access this approval case.",
+          "details": {},
+          "field_errors": {}
+        }
+      },
+      "approvalRules": [
+        {
+          "amount_min": "0.00",
+          "amount_max": "500000.00",
+          "condition_code": null,
+          "required_director_count": 1
+        },
+        {
+          "amount_min": "0.00",
+          "amount_max": "500000.00",
+          "condition_code": null,
+          "required_director_count": 1
+        },
+        {
+          "amount_min": "0.00",
+          "amount_max": "500000.00",
+          "condition_code": null,
+          "required_director_count": 1
+        },
+        {
+          "amount_min": "0.00",
+          "amount_max": "500000.00",
+          "condition_code": null,
+          "required_director_count": 1
+        },
+        {
+          "amount_min": "500000.01",
+          "amount_max": null,
+          "condition_code": null,
+          "required_director_count": 2
+        },
+        {
+          "amount_min": "500000.01",
+          "amount_max": null,
+          "condition_code": null,
+          "required_director_count": 2
+        },
+        {
+          "amount_min": "0.00",
+          "amount_max": null,
+          "condition_code": "exceeds_permissible_limit",
+          "required_director_count": 2
+        },
+        {
+          "amount_min": "0.00",
+          "amount_max": null,
+          "condition_code": "exceeds_permissible_limit",
+          "required_director_count": 2
+        }
+      ],
+      "servicing": {
+        "direct": {
+          "replayed": false,
+          "capture": {
+            "repayment_id": "68b95434-c9c1-4e2d-b0ed-e9e25ae8cb33",
+            "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+            "repayment_source": "direct_farmer",
+            "amount_received": "100000.00",
+            "received_date": "2026-07-25",
+            "payment_method": "rtgs",
+            "bank_reference_number": "UTR-CRITICAL-UAT-DIRECT",
+            "bank_statement_line_id": null,
+            "statement_match_status": "not_linked",
+            "allocation_status": "allocated",
+            "sap_posting": {
+              "status": "posted",
+              "due_date": "2026-07-27",
+              "sap_entry_reference": "SAP-CRITICAL-UAT-DIRECT",
+              "posted_at": "2026-07-25T10:00:00Z"
+            }
+          },
+          "allocation": {
+            "repayment_allocation_id": "4a7f6e7f-3596-45f0-83fc-b48f19423df4",
+            "repayment_id": "68b95434-c9c1-4e2d-b0ed-e9e25ae8cb33",
+            "allocation_rule": "principal_first",
+            "allocation_rule_version": "v1",
+            "allocation_status": "allocated",
+            "allocated_to_principal": "100000.00",
+            "allocated_to_interest": "0.00",
+            "allocated_to_charges": "0.00",
+            "unallocated_amount": "0.00",
+            "exception_reason": null,
+            "loan_account": {
+              "principal_outstanding": "300000.00",
+              "interest_outstanding": "0.00",
+              "charges_outstanding": "0.00",
+              "total_outstanding": "300000.00"
+            }
+          }
+        },
+        "subsidiary": {
+          "repayment_id": "ea9f97b5-d6b1-42f8-b1fc-11180fac2ddf",
+          "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+          "repayment_source": "subsidiary_deduction",
+          "amount_received": "75000.00",
+          "received_date": "2026-07-25",
+          "payment_method": "subsidiary_transfer",
+          "bank_reference_number": "SUB-CRITICAL-UAT-001",
+          "subsidiary_company_id": "00000000-0000-4000-8350-000000000001",
+          "produce_payment_reference": "PRODUCE-CRITICAL-UAT-001",
+          "transfer_reference": "SUB-CRITICAL-UAT-001",
+          "tri_party_agreement_id": "a61f049a-4ae5-4429-8619-053c8a0bfc1f",
+          "bank_statement_line_id": null,
+          "reconciliation_status": "pending_statement",
+          "treasury_verification_status": "pending",
+          "allocation_status": "pending",
+          "sap_posting_status": "pending"
+        },
+        "invoice": {
+          "interest_invoice_id": "97f5477f-c213-4d58-aabc-d21f9ead792a",
+          "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+          "member_id": "7ae720ea-bb71-4e79-85da-4c356c62de20",
+          "financial_year": "FY2026-27",
+          "invoice_number": "INT-2026-97F5477F",
+          "invoice_date": "2027-03-31",
+          "interest_period_start": "2026-04-01",
+          "interest_period_end": "2027-03-31",
+          "principal_base_amount": "400000.00",
+          "interest_rate": "9.2500",
+          "gross_interest_amount": "30664.38",
+          "interest_paid_amount": "0.00",
+          "tax_amount": "0.00",
+          "fixed_fee_amount": "0.00",
+          "interest_amount": "30664.38",
+          "invoice_status": "draft",
+          "rate_version_number": "RATE-CRITICAL-UAT-1",
+          "calculation_version": "INV-CRITICAL-UAT-1",
+          "document_id": null,
+          "communication_id": null,
+          "delivery_status": null,
+          "generated_by_user_id": "00000000-0000-4000-8300-000000000002",
+          "generated_at": "2026-07-25T05:03:08.558845Z",
+          "issued_by_user_id": null,
+          "issued_at": null
+        },
+        "dpd": {
+          "dpd_status_id": "bff94a9a-ea85-416b-870c-433317425f1e",
+          "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+          "as_of_date": "2026-07-01",
+          "days_past_due": 1,
+          "sop_bucket": "current",
+          "standard_bucket": null,
+          "principal_overdue_amount": "400000.00",
+          "interest_overdue_amount": "0.00",
+          "total_overdue_amount": "400000.00",
+          "calculation_version": "DPD-CALC-1",
+          "operational_scheme_version": null,
+          "policy_decision": {
+            "sop_policy_version": "SFPCL-SOP-DPD-1",
+            "sop_boundary_convention": {
+              "anniversary_basis": "calendar_anniversary",
+              "leap_day_anniversary": "february_28",
+              "first_anniversary_inclusive": true,
+              "second_anniversary_inclusive": true,
+              "third_anniversary_inclusive": true,
+              "after_third_anniversary_bucket": "more_than_three_years"
+            },
+            "operational_scheme_id": null,
+            "operational_scheme_version": null,
+            "operational_effective_from": null,
+            "operational_effective_to": null,
+            "operational_boundaries": null
+          },
+          "calculation_inputs": {
+            "schedule_lines": [
+              {
+                "repayment_schedule_id": "f1d5e701-e1cb-472f-8d02-bf4bbd3d719b",
+                "due_date": "2026-06-30",
+                "principal_due": "400000.00",
+                "interest_due": "0.00",
+                "principal_paid_as_of": "0.00",
+                "interest_paid_as_of": "0.00"
+              }
+            ],
+            "applied_allocation_ids": [],
+            "applied_capitalisation_ids": [],
+            "as_of_date": "2026-07-01",
+            "policy_decision": {
+              "sop_policy_version": "SFPCL-SOP-DPD-1",
+              "sop_boundary_convention": {
+                "anniversary_basis": "calendar_anniversary",
+                "leap_day_anniversary": "february_28",
+                "first_anniversary_inclusive": true,
+                "second_anniversary_inclusive": true,
+                "third_anniversary_inclusive": true,
+                "after_third_anniversary_bucket": "more_than_three_years"
+              },
+              "operational_scheme_id": null,
+              "operational_scheme_version": null,
+              "operational_effective_from": null,
+              "operational_effective_to": null,
+              "operational_boundaries": null
+            }
+          },
+          "created_at": "2026-07-25T05:03:09.272702Z"
+        }
+      },
+      "defaultRecoveryAndClosureBoundaries": {
+        "opened": {
+          "default_case_id": "fa45d203-aeec-4a3b-bc33-cbc2550a485d",
+          "default_case_status": "grace_period_active",
+          "grace_period_start_date": "2026-06-30",
+          "grace_period_end_date": "2026-09-30",
+          "available_actions": []
+        },
+        "recoveryDenied": {
+          "code": "FORBIDDEN",
+          "message": "Configured recovery decision authority is required.",
+          "details": {},
+          "field_errors": {}
+        },
+        "prematureClosure": {
+          "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+          "ready_for_closure": false,
+          "checks": [
+            {
+              "code": "principal_paid",
+              "status": "fail"
+            },
+            {
+              "code": "interest_paid_or_approved_adjustment",
+              "status": "pass",
+              "approved_adjustment": false
+            },
+            {
+              "code": "charges_paid",
+              "status": "pass"
+            },
+            {
+              "code": "ledger_reconciled",
+              "status": "fail"
+            },
+            {
+              "code": "recovery_clear",
+              "status": "pass"
+            },
+            {
+              "code": "security_tasks_identified",
+              "status": "pass",
+              "security_return_required": true,
+              "physical_share_return_required": true,
+              "demat_unpledge_required": false,
+              "blank_cheque_return_required": true,
+              "poa_release_required": true
+            }
+          ],
+          "principal_outstanding": "300000.00",
+          "interest_outstanding": "0.00",
+          "charges_outstanding": "0.00",
+          "total_outstanding": "300000.00",
+          "interest_adjustment_applied": false,
+          "security_return_required": true,
+          "physical_share_return_required": true,
+          "demat_unpledge_required": false,
+          "blank_cheque_return_required": true,
+          "poa_release_required": true
+        },
+        "separatePublicClosureTracer": true
+      },
+      "compliance": {
+        "section186": {
+          "section_186_tracker_id": "2adb5319-206c-41c8-94cb-a4120417d3f6",
+          "financial_year": "FY2026-27",
+          "quarter": "Q1",
+          "paid_up_capital_amount": "100.00",
+          "free_reserves_amount": "100.00",
+          "securities_premium_amount": "0.00",
+          "limit_60_percent_basis_amount": "120.00",
+          "limit_100_percent_basis_amount": "100.00",
+          "applicable_limit_amount": "120.00",
+          "total_loans_exposure_amount": "100.00",
+          "headroom_amount": "20.00",
+          "within_limit_flag": true,
+          "special_resolution_required_flag": false,
+          "compliance_task_id": "00000000-0000-4000-8320-000000000001",
+          "compliance_evidence_id": "00000000-0000-4000-8340-000000000001",
+          "prepared_by_user_id": "00000000-0000-4000-8300-000000000001",
+          "reviewer_user_id": "00000000-0000-4000-8300-000000000002",
+          "prepared_at": "2026-07-25T05:03:11.682840+00:00",
+          "reviewed_at": null,
+          "submitted_for_review_at": null,
+          "review_status": "draft",
+          "review_comments": "",
+          "presented_to_board_flag": false,
+          "board_document_id": null,
+          "available_actions": [
+            "submit_for_review"
+          ]
+        },
+        "nbfc": {
+          "nbfc_principal_test_id": "0c2fb4f9-6f0c-44e0-93cf-43a64e7df4bb",
+          "financial_year": "FY2026-27",
+          "quarter": "Q1",
+          "financial_assets_amount": "51.00",
+          "total_assets_amount": "100.00",
+          "financial_asset_ratio": "51.0000",
+          "financial_income_amount": "51.00",
+          "gross_income_amount": "100.00",
+          "financial_income_ratio": "51.0000",
+          "early_warning_threshold_ratio": "40.0000",
+          "registration_triggered_flag": true,
+          "one_ratio_above_statutory_flag": false,
+          "early_warning_flag": true,
+          "presented_to_board_flag": false,
+          "compliance_task_id": "00000000-0000-4000-8320-000000000002",
+          "compliance_evidence_id": "00000000-0000-4000-8340-000000000002",
+          "prepared_by_user_id": "00000000-0000-4000-8300-000000000001",
+          "reviewer_user_id": "00000000-0000-4000-8300-000000000002",
+          "prepared_at": "2026-07-25T05:03:11.703995+00:00",
+          "reviewed_at": null,
+          "submitted_for_review_at": null,
+          "review_status": "draft",
+          "review_comments": "",
+          "board_document_id": null,
+          "available_actions": [
+            "submit_for_review"
+          ]
+        }
+      },
+      "reportingAudit": {
+        "filteredCount": 1,
+        "report": {
+          "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+          "loan_account_number": "LN-REAL-OWNER-001",
+          "loan_application_id": "1362b551-9f5c-47f2-ba29-ef1abe3b16d5",
+          "member_id": "7ae720ea-bb71-4e79-85da-4c356c62de20",
+          "borrower_name": "Checklist Borrower 001",
+          "loan_account_status": "partially_repaid",
+          "sanctioned_amount": "400000.00",
+          "disbursed_amount": "400000.00",
+          "principal_outstanding": "300000.00",
+          "interest_outstanding": "0.00",
+          "charges_outstanding": "0.00",
+          "total_outstanding": "300000.00",
+          "loan_type": "short_term",
+          "tenure_start_date": "2026-07-25",
+          "tenure_end_date": null,
+          "repayment_date": "2026-07-19",
+          "current_interest_rate": "9.0000",
+          "created_at": "2026-07-19T15:07:08.500831Z"
+        },
+        "exportJob": {
+          "export_job_id": "005014e1-1379-44e1-974b-66cd27c10374",
+          "report_code": "loan-portfolio",
+          "format": "csv",
+          "filters": {
+            "status": "partially_repaid"
+          },
+          "status": "queued",
+          "failure_code": null,
+          "idempotency_replayed": false,
+          "requested_at": "2026-07-25T05:03:11.737435Z",
+          "started_at": null,
+          "completed_at": null
+        },
+        "audit": [
+          {
+            "audit_log_id": "2b67d699-baf4-4000-9488-e4d8b5535043",
+            "actor": {
+              "user_id": "a8b39955-0e97-43ef-bac0-ee52f3f65168",
+              "full_name": "Epic 009 Browser CFC"
+            },
+            "actor_type": "user",
+            "actor_role_codes": [],
+            "actor_team_codes": [],
+            "action": "disbursement.authorised",
+            "module": "disbursement",
+            "entity_type": "disbursement",
+            "entity_id": "784ceb62-918e-45bb-bf47-d0fb43ccf690",
+            "linked_record": {
+              "entity_type": "disbursement",
+              "entity_id": "784ceb62-918e-45bb-bf47-d0fb43ccf690"
+            },
+            "old_value": {
+              "authorisation_status": "pending",
+              "bank_transfer_status": "pending"
+            },
+            "new_value": {
+              "action_id": "73799037-96b0-4084-b78a-f0e3eb215c39",
+              "disbursement_id": "784ceb62-918e-45bb-bf47-d0fb43ccf690",
+              "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+              "loan_application_id": "1362b551-9f5c-47f2-ba29-ef1abe3b16d5",
+              "member_id": "7ae720ea-bb71-4e79-85da-4c356c62de20",
+              "disbursement_amount": "400000.00",
+              "maker_user_id": "a5d7abfd-34d5-430e-8689-c0d5f970ed4e",
+              "maker_role_code": "senior_manager_finance",
+              "maker_team_codes": [],
+              "checker_user_id": "a8b39955-0e97-43ef-bac0-ee52f3f65168",
+              "checker_role_code": "chief_financial_controller",
+              "checker_team_codes": [],
+              "initiation_request_id": "e7d86f36-2dd5-4218-a606-5eaccd8fbc47",
+              "initiation_comment_digest": "317b350a393c11fb88c1b92e1ef04e03fd71dbe9b800321a5af41f8518631692",
+              "readiness_digest": "23c11fb22b5940f21d70a8bf5caaa78a4898f606be54189d0127e9a23d816902",
+              "authorisation_evidence_digest": "b9c46e25bd5f8c94fd63c27e19fe2a97638c3b39586a0dc04d4e86d32da7511f",
+              "comments_digest": "4611c19b0f164c4902f13c19cbe4a602347dbdbb2b1f4e50945e51e3b5a7e58d",
+              "request_id": "1312f603-d588-46f0-a6e8-ddede8efc585",
+              "ip_address": "127.0.0.1",
+              "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.33 Safari/537.36",
+              "authorised_at": "2026-07-25T05:03:00.967948Z",
+              "authorisation_status": "approved",
+              "bank_transfer_status": "pending",
+              "outcome": "approved"
+            },
+            "reason": null,
+            "outcome": "approved",
+            "request_id": "1312f603-d588-46f0-a6e8-ddede8efc585",
+            "ip_address": "127.0.0.1",
+            "device": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.33 Safari/537.36",
+            "created_at": "2026-07-25T05:03:00.970832Z"
+          },
+          {
+            "audit_log_id": "8d3719eb-3ada-4fd2-9f64-a7ef625118b7",
+            "actor": {
+              "user_id": "a1f8b9ae-33c8-4002-a7e0-36ef64ac3aa1",
+              "full_name": "Checklist Credit"
+            },
+            "actor_type": "user",
+            "actor_role_codes": [
+              "credit_manager"
+            ],
+            "actor_team_codes": [],
+            "action": "repayment.allocated",
+            "module": "repayment",
+            "entity_type": "repayment_allocation",
+            "entity_id": "4a7f6e7f-3596-45f0-83fc-b48f19423df4",
+            "linked_record": {
+              "entity_type": "repayment_allocation",
+              "entity_id": "4a7f6e7f-3596-45f0-83fc-b48f19423df4"
+            },
+            "old_value": null,
+            "new_value": {
+              "repayment_allocation_id": "4a7f6e7f-3596-45f0-83fc-b48f19423df4",
+              "repayment_id": "68b95434-c9c1-4e2d-b0ed-e9e25ae8cb33",
+              "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+              "actor_user_id": "a1f8b9ae-33c8-4002-a7e0-36ef64ac3aa1",
+              "actor_role_codes": [
+                "credit_manager"
+              ],
+              "allocation_rule": "principal_first_v1",
+              "amount_received": "100000.00",
+              "allocated_to_principal": "100000.00",
+              "allocated_to_interest": "0.00",
+              "allocated_to_charges": "0.00",
+              "unallocated_amount": "0.00",
+              "principal_before": "400000.00",
+              "principal_after": "300000.00",
+              "interest_before": "0.00",
+              "interest_after": "0.00",
+              "total_before": "400000.00",
+              "total_after": "300000.00",
+              "loan_status_before": "active",
+              "loan_status_after": "partially_repaid",
+              "allocation_status": "allocated",
+              "exception_reason": null,
+              "decision_reason_sha256": "6d57dce41466e211552facb67095d3339e395ad90711a6bd0a3f81df9b11a4d5",
+              "sap_posting_status": "posted",
+              "sap_posting_audit_id": "7aa05001-8a85-4676-a3b8-bc742d49fb07",
+              "manual_allocation_approval_id": null,
+              "manual_allocation_approval_audit_id": null,
+              "request_id": "",
+              "original_response": {
+                "repayment_allocation_id": "4a7f6e7f-3596-45f0-83fc-b48f19423df4",
+                "repayment_id": "68b95434-c9c1-4e2d-b0ed-e9e25ae8cb33",
+                "allocation_rule": "principal_first",
+                "allocation_rule_version": "v1",
+                "allocation_status": "allocated",
+                "allocated_to_principal": "100000.00",
+                "allocated_to_interest": "0.00",
+                "allocated_to_charges": "0.00",
+                "unallocated_amount": "0.00",
+                "exception_reason": null,
+                "loan_account": {
+                  "principal_outstanding": "300000.00",
+                  "interest_outstanding": "0.00",
+                  "charges_outstanding": "0.00",
+                  "total_outstanding": "300000.00"
+                }
+              }
+            },
+            "reason": null,
+            "outcome": null,
+            "request_id": "",
+            "ip_address": "127.0.0.1",
+            "device": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.33 Safari/537.36",
+            "created_at": "2026-07-25T05:03:07.819599Z"
+          },
+          {
+            "audit_log_id": "a4a9a9eb-1e27-49fd-a8d9-1ec95b7d6aa1",
+            "actor": {
+              "user_id": "a1f8b9ae-33c8-4002-a7e0-36ef64ac3aa1",
+              "full_name": "Checklist Credit"
+            },
+            "actor_type": "user",
+            "actor_role_codes": [],
+            "actor_team_codes": [],
+            "action": "default.case_opened",
+            "module": "default",
+            "entity_type": "default_case",
+            "entity_id": "fa45d203-aeec-4a3b-bc33-cbc2550a485d",
+            "linked_record": {
+              "entity_type": "default_case",
+              "entity_id": "fa45d203-aeec-4a3b-bc33-cbc2550a485d"
+            },
+            "old_value": null,
+            "new_value": {
+              "loan_account_id": "4a6ae485-95e9-4403-ba6d-712c6b49f166",
+              "member_id": "7ae720ea-bb71-4e79-85da-4c356c62de20",
+              "default_case_id": "fa45d203-aeec-4a3b-bc33-cbc2550a485d",
+              "trigger_event": "missed_principal_repayment",
+              "scheduled_due_date": "2026-06-30",
+              "default_case_status": "grace_period_active"
+            },
+            "reason": null,
+            "outcome": null,
+            "request_id": null,
+            "ip_address": "127.0.0.1",
+            "device": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.33 Safari/537.36",
+            "created_at": "2026-07-25T05:03:09.293466Z"
+          },
+          {
+            "audit_log_id": "dff2c7db-cec3-49e4-aaee-379a3559ea4a",
+            "actor": {
+              "user_id": "00000000-0000-4000-8300-000000000001",
+              "full_name": "Critical UAT CFO"
+            },
+            "actor_type": "user",
+            "actor_role_codes": [],
+            "actor_team_codes": [],
+            "action": "compliance.section186.created",
+            "module": "compliance",
+            "entity_type": "section_186_tracker",
+            "entity_id": "2adb5319-206c-41c8-94cb-a4120417d3f6",
+            "linked_record": {
+              "entity_type": "section_186_tracker",
+              "entity_id": "2adb5319-206c-41c8-94cb-a4120417d3f6"
+            },
+            "old_value": null,
+            "new_value": {
+              "actor_role_code": "cfo",
+              "input_snapshot": {
+                "financial_year": "FY2026-27",
+                "quarter": "Q1",
+                "paid_up_capital_amount": "100.00",
+                "free_reserves_amount": "100.00",
+                "securities_premium_amount": "0.00",
+                "total_loans_exposure_amount": "100.00",
+                "compliance_task_id": "00000000-0000-4000-8320-000000000001",
+                "compliance_evidence_id": "00000000-0000-4000-8340-000000000001"
+              },
+              "result_snapshot": {
+                "limit_60_percent_basis_amount": "120.00",
+                "limit_100_percent_basis_amount": "100.00",
+                "applicable_limit_amount": "120.00",
+                "total_loans_exposure_amount": "100.00",
+                "headroom_amount": "20.00",
+                "within_limit_flag": true,
+                "special_resolution_required_flag": false
+              },
+              "reviewer_snapshot": {
+                "reviewer_user_id": "00000000-0000-4000-8300-000000000002",
+                "role_code": "accounts_head"
+              },
+              "evidence_snapshot": {
+                "compliance_evidence_id": "00000000-0000-4000-8340-000000000001",
+                "document_id": "00000000-0000-4000-8330-000000000001",
+                "review_status": "accepted",
+                "source_period": "2026-Q2"
+              }
+            },
+            "reason": null,
+            "outcome": null,
+            "request_id": null,
+            "ip_address": "",
+            "device": null,
+            "created_at": "2026-07-25T05:03:11.685654Z"
+          },
+          {
+            "audit_log_id": "dabe897a-15db-4b8f-b076-630fbba28ca0",
+            "actor": {
+              "user_id": "00000000-0000-4000-8300-000000000001",
+              "full_name": "Critical UAT CFO"
+            },
+            "actor_type": "user",
+            "actor_role_codes": [],
+            "actor_team_codes": [],
+            "action": "compliance.nbfc_test.created",
+            "module": "compliance",
+            "entity_type": "nbfc_principal_test",
+            "entity_id": "0c2fb4f9-6f0c-44e0-93cf-43a64e7df4bb",
+            "linked_record": {
+              "entity_type": "nbfc_principal_test",
+              "entity_id": "0c2fb4f9-6f0c-44e0-93cf-43a64e7df4bb"
+            },
+            "old_value": null,
+            "new_value": {
+              "actor_role_code": "cfo",
+              "input_snapshot": {
+                "financial_year": "FY2026-27",
+                "quarter": "Q1",
+                "financial_assets_amount": "51.00",
+                "total_assets_amount": "100.00",
+                "financial_income_amount": "51.00",
+                "gross_income_amount": "100.00",
+                "early_warning_threshold_ratio": "40.0000",
+                "compliance_task_id": "00000000-0000-4000-8320-000000000002",
+                "compliance_evidence_id": "00000000-0000-4000-8340-000000000002"
+              },
+              "result_snapshot": {
+                "financial_asset_ratio": "51.0000",
+                "financial_income_ratio": "51.0000",
+                "registration_triggered_flag": true,
+                "one_ratio_above_statutory_flag": false,
+                "early_warning_flag": true
+              },
+              "reviewer_snapshot": {
+                "reviewer_user_id": "00000000-0000-4000-8300-000000000002",
+                "role_code": "accounts_head"
+              },
+              "evidence_snapshot": {
+                "compliance_evidence_id": "00000000-0000-4000-8340-000000000002",
+                "document_id": "00000000-0000-4000-8330-000000000002",
+                "review_status": "accepted",
+                "source_period": "2026-Q2"
+              }
+            },
+            "reason": null,
+            "outcome": null,
+            "request_id": null,
+            "ip_address": "",
+            "device": null,
+            "created_at": "2026-07-25T05:03:11.705677Z"
+          },
+          {
+            "audit_log_id": "5807c190-d1e6-405c-be76-e2d26c90499e",
+            "actor": {
+              "user_id": "00000000-0000-4000-8300-000000000001",
+              "full_name": "Critical UAT CFO"
+            },
+            "actor_type": "user",
+            "actor_role_codes": [],
+            "actor_team_codes": [],
+            "action": "report.export.requested",
+            "module": "report",
+            "entity_type": "report_export_job",
+            "entity_id": "005014e1-1379-44e1-974b-66cd27c10374",
+            "linked_record": {
+              "entity_type": "report_export_job",
+              "entity_id": "005014e1-1379-44e1-974b-66cd27c10374"
+            },
+            "old_value": null,
+            "new_value": {
+              "export_job_id": "005014e1-1379-44e1-974b-66cd27c10374",
+              "report_code": "loan-portfolio",
+              "format": "csv",
+              "classification": "confidential",
+              "requested_columns": [],
+              "sensitive_export": false,
+              "authority": {
+                "actor_id": "00000000-0000-4000-8300-000000000001",
+                "role_codes": [
+                  "cfo"
+                ],
+                "team_codes": [],
+                "reports_export": true,
+                "reports_export_sensitive": false,
+                "sensitive_export": false
+              },
+              "outcome": "queued"
+            },
+            "reason": null,
+            "outcome": "queued",
+            "request_id": null,
+            "ip_address": "127.0.0.1",
+            "device": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.33 Safari/537.36",
+            "created_at": "2026-07-25T05:03:11.738394Z"
+          }
+        ]
+      },
+      "permissionNegative": {
+        "deniedExport": {
+          "code": "FORBIDDEN",
+          "message": "Report read and export permissions are required.",
+          "details": {},
+          "field_errors": {}
+        },
+        "deniedAccount": {
+          "code": "FORBIDDEN",
+          "message": "Loan account read permission is required.",
+          "details": {},
+          "field_errors": {}
+        },
+        "maskedMember": {
+          "member_id": "00000000-0000-4000-8000-000000000602",
+          "member_number": "MEM-E2E-006",
+          "member_type": "individual_farmer",
+          "legal_name": "Epic 006 Browser Member",
+          "display_name": "Epic 006 Browser Member",
+          "folio_number": "FOL-E2E-006",
+          "membership_status": "active",
+          "kyc_status": "verified",
+          "rekyc_due_date": null,
+          "default_status": "no_default",
+          "mobile_number": null,
+          "email": null,
+          "share_summary": {
+            "number_of_shares": null,
+            "holding_mode": null,
+            "available_share_count": null
+          },
+          "active_member_status": {
+            "status": "active",
+            "verified_at": "2026-07-11T10:00:00Z"
+          },
+          "membership_start_date": null,
+          "pan": {
+            "masked": "******602F",
+            "can_view_full": false
+          },
+          "aadhaar": {
+            "masked": "********0602",
+            "can_view_full": false
+          },
+          "registered_address": {
+            "line1": null,
+            "line2": null,
+            "village_city": null,
+            "district": null,
+            "state": null,
+            "pincode": null
+          },
+          "individual_profile": {
+            "first_name": "Epic 006",
+            "middle_name": null,
+            "last_name": "Member",
+            "gender": null,
+            "date_of_birth": null,
+            "occupation": null,
+            "land_area_under_cultivation_acres": null,
+            "primary_crop": null,
+            "services_availed_flag": true,
+            "employment_or_service_years": null
+          },
+          "producer_institution_profile": null,
+          "produce_supply_records": [
+            {
+              "produce_supply_record_id": "00000000-0000-4000-8000-000000000624",
+              "member_id": "00000000-0000-4000-8000-000000000602",
+              "financial_year": "2025-26",
+              "supplied_to_entity_type": "sfpcl",
+              "supplied_to_entity_id": null,
+              "supply_route": "direct",
+              "producer_institution_member_id": null,
+              "crop_type": "synthetic_crop",
+              "quantity": null,
+              "value_amount": null,
+              "evidence_reference": "E2E-2025-26",
+              "verified_flag": true,
+              "verified_by_user_id": "65168993-a145-4e3f-910d-cf93fd7b5711",
+              "verified_at": "2026-07-11T10:00:00Z",
+              "version": 1,
+              "available_actions": [
+                {
+                  "action_code": "members.active_status.verify",
+                  "label": "Verify supply record",
+                  "enabled": false,
+                  "disabled_reason": "The record maker cannot verify this supply record.",
+                  "required_permission": "members.active_status.verify",
+                  "required_role": null
+                }
+              ]
+            },
+            {
+              "produce_supply_record_id": "00000000-0000-4000-8000-000000000623",
+              "member_id": "00000000-0000-4000-8000-000000000602",
+              "financial_year": "2024-25",
+              "supplied_to_entity_type": "sfpcl",
+              "supplied_to_entity_id": null,
+              "supply_route": "direct",
+              "producer_institution_member_id": null,
+              "crop_type": "synthetic_crop",
+              "quantity": null,
+              "value_amount": null,
+              "evidence_reference": "E2E-2024-25",
+              "verified_flag": true,
+              "verified_by_user_id": "65168993-a145-4e3f-910d-cf93fd7b5711",
+              "verified_at": "2026-07-11T10:00:00Z",
+              "version": 1,
+              "available_actions": [
+                {
+                  "action_code": "members.active_status.verify",
+                  "label": "Verify supply record",
+                  "enabled": false,
+                  "disabled_reason": "The record maker cannot verify this supply record.",
+                  "required_permission": "members.active_status.verify",
+                  "required_role": null
+                }
+              ]
+            },
+            {
+              "produce_supply_record_id": "00000000-0000-4000-8000-000000000622",
+              "member_id": "00000000-0000-4000-8000-000000000602",
+              "financial_year": "2023-24",
+              "supplied_to_entity_type": "sfpcl",
+              "supplied_to_entity_id": null,
+              "supply_route": "direct",
+              "producer_institution_member_id": null,
+              "crop_type": "synthetic_crop",
+              "quantity": null,
+              "value_amount": null,
+              "evidence_reference": "E2E-2023-24",
+              "verified_flag": true,
+              "verified_by_user_id": "65168993-a145-4e3f-910d-cf93fd7b5711",
+              "verified_at": "2026-07-11T10:00:00Z",
+              "version": 1,
+              "available_actions": [
+                {
+                  "action_code": "members.active_status.verify",
+                  "label": "Verify supply record",
+                  "enabled": false,
+                  "disabled_reason": "The record maker cannot verify this supply record.",
+                  "required_permission": "members.active_status.verify",
+                  "required_role": null
+                }
+              ]
+            },
+            {
+              "produce_supply_record_id": "00000000-0000-4000-8000-000000000621",
+              "member_id": "00000000-0000-4000-8000-000000000602",
+              "financial_year": "2022-23",
+              "supplied_to_entity_type": "sfpcl",
+              "supplied_to_entity_id": null,
+              "supply_route": "direct",
+              "producer_institution_member_id": null,
+              "crop_type": "synthetic_crop",
+              "quantity": null,
+              "value_amount": null,
+              "evidence_reference": "E2E-2022-23",
+              "verified_flag": true,
+              "verified_by_user_id": "65168993-a145-4e3f-910d-cf93fd7b5711",
+              "verified_at": "2026-07-11T10:00:00Z",
+              "version": 1,
+              "available_actions": [
+                {
+                  "action_code": "members.active_status.verify",
+                  "label": "Verify supply record",
+                  "enabled": false,
+                  "disabled_reason": "The record maker cannot verify this supply record.",
+                  "required_permission": "members.active_status.verify",
+                  "required_role": null
+                }
+              ]
+            }
+          ],
+          "available_actions": [
+            {
+              "action_code": "members.member.update",
+              "label": "Update member",
+              "enabled": true,
+              "disabled_reason": null,
+              "required_permission": "members.member.update",
+              "required_role": null
+            },
+            {
+              "action_code": "members.member.reverify_identity",
+              "label": "Reverify identity",
+              "enabled": true,
+              "disabled_reason": null,
+              "required_permission": "members.member.update",
+              "required_role": null
+            },
+            {
+              "action_code": "members.member.identity_change.approve",
+              "label": "Approve identity change",
+              "enabled": false,
+              "disabled_reason": "Missing identity change approval permission.",
+              "required_permission": "members.member.identity_change.approve",
+              "required_role": null
+            }
+          ],
+          "pending_identity_change": null,
+          "version": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,271 @@
+{
+  "source": [
+    "test-plan.md §16, §18-22, §27.1-27.2, §28, §29.4",
+    "implementation-roadmap.md §17.4-17.6, §27.3",
+    "product-requirements.md §11-12",
+    "screen-spec.md §13",
+    "technical-architecture.md §29.4"
+  ],
+  "scenarios": [
+    {
+      "uat": "UAT-001",
+      "e2e": "E2E-001",
+      "mode": "automated",
+      "role": "Field Officer → Finance → CFC",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "standard loan, documents, SAP, disbursement",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-002",
+      "e2e": "E2E-002",
+      "mode": "manual",
+      "role": "Company Secretary",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "repeat standard loan with demat/CDSL evidence and unpledge",
+      "expected_records_ledger_audit": "Retain the named owner evidence during business UAT.",
+      "retained_evidence": "manual UAT worksheet"
+    },
+    {
+      "uat": "UAT-003",
+      "e2e": "E2E-003",
+      "mode": "manual",
+      "role": "Credit Manager",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "repeat standard loan with FPC and beneficial-owner evidence",
+      "expected_records_ledger_audit": "Retain the named owner evidence during business UAT.",
+      "retained_evidence": "manual UAT worksheet"
+    },
+    {
+      "uat": "UAT-004",
+      "e2e": "E2E-004",
+      "mode": "manual",
+      "role": "Deputy Manager Finance",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "return and resolve named deficiencies",
+      "expected_records_ledger_audit": "Retain the named owner evidence during business UAT.",
+      "retained_evidence": "manual UAT worksheet"
+    },
+    {
+      "uat": "UAT-005",
+      "e2e": "E2E-005",
+      "mode": "manual",
+      "role": "Credit Manager",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "reject failed eligibility and retain communication",
+      "expected_records_ledger_audit": "Retain the named owner evidence during business UAT.",
+      "retained_evidence": "manual UAT worksheet"
+    },
+    {
+      "uat": "UAT-006",
+      "e2e": "E2E-006",
+      "mode": "automated",
+      "role": "CFO + Director",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "below-threshold rule",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-007",
+      "e2e": "E2E-006",
+      "mode": "automated",
+      "role": "CFO + two Directors",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "above-threshold rule",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-008",
+      "e2e": "E2E-007",
+      "mode": "automated",
+      "role": "CFO + two Directors",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "permissible-limit exception rule",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-009",
+      "e2e": "E2E-008",
+      "mode": "manual",
+      "role": "Non-conflicted Directors",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "general-meeting evidence and abstention",
+      "expected_records_ledger_audit": "Retain the named owner evidence during business UAT.",
+      "retained_evidence": "manual UAT worksheet"
+    },
+    {
+      "uat": "UAT-010",
+      "e2e": "E2E-009",
+      "mode": "manual",
+      "role": "Company Secretary",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "signature mismatch resolution evidence",
+      "expected_records_ledger_audit": "Retain the named owner evidence during business UAT.",
+      "retained_evidence": "manual UAT worksheet"
+    },
+    {
+      "uat": "UAT-011",
+      "e2e": "E2E-001",
+      "mode": "automated",
+      "role": "Company Secretary/Credit/Sanction",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "current checklist evidence",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-012",
+      "e2e": "E2E-010",
+      "mode": "automated",
+      "role": "Senior Manager Finance",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "completed SAP code",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-013",
+      "e2e": "E2E-001",
+      "mode": "automated",
+      "role": "Senior Finance/CFC",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "initiate, authorise, transfer",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-014",
+      "e2e": "E2E-011",
+      "mode": "automated",
+      "role": "Credit Manager",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "direct receipt and principal-first allocation",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-015",
+      "e2e": "E2E-012",
+      "mode": "automated",
+      "role": "Credit Manager",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "subsidiary receipt and reconciliation state",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-016",
+      "e2e": "E2E-013",
+      "mode": "automated",
+      "role": "Credit Manager",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "interest invoice",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-017",
+      "e2e": "E2E-013",
+      "mode": "automated",
+      "role": "Credit Manager",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "DPD from schedule truth",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-018",
+      "e2e": "E2E-014",
+      "mode": "automated",
+      "role": "Credit Manager",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "default and grace period",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-019",
+      "e2e": "E2E-014",
+      "mode": "automated-negative/manual-positive",
+      "role": "Credit Manager/authority",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "recovery denied before approval; approve manually",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-020",
+      "e2e": "E2E-015",
+      "mode": "automated",
+      "role": "Credit Manager",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "premature closure denied and public tracer closes fully-paid loan",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-021",
+      "e2e": "E2E-016",
+      "mode": "automated",
+      "role": "CFO",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "Section 186 calculation",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-022",
+      "e2e": "E2E-016",
+      "mode": "automated",
+      "role": "CFO",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "NBFC principal-business calculation",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-023",
+      "e2e": "E2E-017",
+      "mode": "manual",
+      "role": "Compliance Team",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "two-year re-KYC completion with updated documents",
+      "expected_records_ledger_audit": "Retain the named owner evidence during business UAT.",
+      "retained_evidence": "manual UAT worksheet"
+    },
+    {
+      "uat": "UAT-024",
+      "e2e": "E2E-001/011/016",
+      "mode": "automated",
+      "role": "CFO",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "report reconciliation and export job",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-025",
+      "e2e": "E2E-018",
+      "mode": "automated",
+      "role": "Internal Auditor",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "immutable actor/outcome/reason-digest audit",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    },
+    {
+      "uat": "UAT-026",
+      "e2e": "E2E-018",
+      "mode": "automated",
+      "role": "Zero-permission staff",
+      "precondition": "fresh deterministic guarded seed",
+      "public_steps": "RBAC/object/export/audit/masking negatives",
+      "expected_records_ledger_audit": "Asserted in critical-uat-smoke.e2e.spec.ts through public UI/API.",
+      "retained_evidence": "run JSON/PNG/trace"
+    }
+  ]
+}

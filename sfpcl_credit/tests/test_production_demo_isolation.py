@@ -2,9 +2,12 @@ import base64
 import json
 import os
 import subprocess
+from importlib import reload
 from pathlib import Path
 
+from django.conf import settings
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.urls import clear_url_caches
 
 from sfpcl_credit.identity.models import PortalAccount, Role, User, UserSession
 from sfpcl_credit.members.models import Member
@@ -99,6 +102,23 @@ assert response.status_code == 404, response.status_code
 
 
 class ProductionDemoIdentityTests(TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            super().tearDownClass()
+        finally:
+            # ENABLE_DEMO_SURFACES controls URL registration at module import time.
+            # A production override must not leave a worker's cached development
+            # URLconf without tracer routes for whichever TestCase runs next.
+            if not settings.ENABLE_DEMO_SURFACES:
+                raise AssertionError(
+                    "Production demo-surface override leaked beyond its test."
+                )
+            from sfpcl_credit.config import urls as runtime_urls
+
+            reload(runtime_urls)
+            clear_url_caches()
+
     @override_settings(ENABLE_DEMO_SURFACES=False)
     def test_existing_demo_staff_user_cannot_authenticate_in_production(self):
         role = Role.objects.create(
@@ -190,6 +210,7 @@ for command_name in (
     "seed_e2e_users",
     "seed_portal_e2e_fixture",
     "seed_epic_009_e2e_fixture",
+    "seed_critical_uat_e2e_fixture",
     "seed_approval_configuration",
 ):
     try:

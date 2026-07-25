@@ -1,0 +1,145 @@
+Command:
+RALPH_EVIDENCE_DIR=/Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_074057_normal_run/.ralph/runs/2026-07-25_083817_repair/evidence/screenshots/run-1 E2E_DJANGO_PYTHON=/Users/amitkallapa/LMS/.ralph/venv/bin/python npm run e2e -- e2e/critical-uat-smoke.e2e.spec.ts
+
+Working directory: sfpcl-lms/
+
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test e2e/critical-uat-smoke.e2e.spec.ts
+
+[2m[WebServer] [22m[25/Jul/2026 03:20:15] "GET /api/v1/health/ready/ HTTP/1.1" 200 202
+[2m[WebServer] [22m[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+Running 1 test using 1 worker
+
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "OPTIONS /api/v1/auth/login/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "POST /api/v1/auth/login/ HTTP/1.1" 200 1315
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "OPTIONS /api/v1/auth/me/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "GET /api/v1/auth/me/ HTTP/1.1" 200 1530
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "OPTIONS /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "OPTIONS /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 2694
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "GET /api/v1/dashboard/ HTTP/1.1" 200 1040
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 2694
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "GET /api/v1/dashboard/ HTTP/1.1" 200 1040
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:21] "OPTIONS /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:22] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[25/Jul/2026 03:20:22] "OPTIONS /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:22] "OPTIONS /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:22] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1159
+[2m[WebServer] [22m[25/Jul/2026 03:20:23] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4549
+[2m[WebServer] [22m[25/Jul/2026 03:20:23] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4549
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "OPTIONS /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/disbursements/initiate/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "POST /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/disbursements/initiate/ HTTP/1.1" 200 319
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4007
+[2m[WebServer] [22m[25/Jul/2026 03:20:24,721] - Broken pipe from ('127.0.0.1', 55999)
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "POST /api/v1/auth/login/ HTTP/1.1" 200 1335
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "GET /api/v1/auth/me/ HTTP/1.1" 200 1101
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 1264
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "GET /api/v1/dashboard/ HTTP/1.1" 200 914
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 1264
+[2m[WebServer] [22m[25/Jul/2026 03:20:24] "GET /api/v1/dashboard/ HTTP/1.1" 200 914
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4819
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "OPTIONS /api/v1/disbursements/7aa42440-6b04-4763-8c7d-7466e340e83c/authorise/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4819
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "POST /api/v1/disbursements/7aa42440-6b04-4763-8c7d-7466e340e83c/authorise/ HTTP/1.1" 200 373
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 280
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "POST /api/v1/auth/login/ HTTP/1.1" 200 1315
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "GET /api/v1/auth/me/ HTTP/1.1" 200 1530
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 2694
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "GET /api/v1/dashboard/ HTTP/1.1" 200 1040
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 2694
+[2m[WebServer] [22m[25/Jul/2026 03:20:25] "GET /api/v1/dashboard/ HTTP/1.1" 200 1040
+[2m[WebServer] [22m[25/Jul/2026 03:20:26] "OPTIONS /api/v1/notifications/?category=finance HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:26] "GET /api/v1/notifications/?category=finance HTTP/1.1" 200 1715
+[2m[WebServer] [22m[25/Jul/2026 03:20:26] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4739
+[2m[WebServer] [22m[25/Jul/2026 03:20:26] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4739
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "OPTIONS /api/v1/disbursements/7aa42440-6b04-4763-8c7d-7466e340e83c/mark-transfer-successful/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "POST /api/v1/disbursements/7aa42440-6b04-4763-8c7d-7466e340e83c/mark-transfer-successful/ HTTP/1.1" 200 466
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "GET /api/v1/disbursement-workspaces/?page=1&page_size=20 HTTP/1.1" 200 4585
+[2m[WebServer] [22m[25/Jul/2026 03:20:27,628] - Broken pipe from ('127.0.0.1', 56002)
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "POST /api/v1/auth/login/ HTTP/1.1" 200 1286
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "GET /api/v1/auth/me/ HTTP/1.1" 200 3482
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "GET /api/v1/dashboard/ HTTP/1.1" 200 1478
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[25/Jul/2026 03:20:27] "GET /api/v1/dashboard/ HTTP/1.1" 200 1478
+[2m[WebServer] [22m[25/Jul/2026 03:20:28] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1196
+[2m[WebServer] [22m[25/Jul/2026 03:20:28] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1196
+[2m[WebServer] [22m[25/Jul/2026 03:20:28] "OPTIONS /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:28] "GET /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/ HTTP/1.1" 200 1072
+[2m[WebServer] [22m[25/Jul/2026 03:20:29] "POST /api/v1/auth/login/ HTTP/1.1" 200 1244
+[2m[WebServer] [22m[25/Jul/2026 03:20:29] "GET /api/v1/auth/me/ HTTP/1.1" 200 2086
+[2m[WebServer] [22m[25/Jul/2026 03:20:29] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[25/Jul/2026 03:20:29] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[25/Jul/2026 03:20:29] "GET /api/v1/dashboard/ HTTP/1.1" 200 1390
+[2m[WebServer] [22m[25/Jul/2026 03:20:29] "GET /api/v1/dashboard/ HTTP/1.1" 200 1390
+[2m[WebServer] [22m[25/Jul/2026 03:20:29] "OPTIONS /api/v1/approval-matrix-rules/?page=1&page_size=100 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:29] "GET /api/v1/approval-matrix-rules/?page=1&page_size=100 HTTP/1.1" 200 4490
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "POST /api/v1/auth/login/ HTTP/1.1" 200 1238
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/auth/me/ HTTP/1.1" 200 2076
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/dashboard/ HTTP/1.1" 200 1390
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/dashboard/ HTTP/1.1" 200 1390
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "OPTIONS /api/v1/approval-cases/?page=1&page_size=100 HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/approval-cases/?page=1&page_size=100 HTTP/1.1" 200 6820
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "POST /api/v1/auth/login/ HTTP/1.1" 200 1255
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/auth/me/ HTTP/1.1" 200 454
+[2m[WebServer] [22mForbidden: /api/v1/notifications/
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22m[25/Jul/2026 03:20:30] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 403 244
+[2m[WebServer] [22mForbidden: /api/v1/dashboard/
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "GET /api/v1/dashboard/ HTTP/1.1" 403 250
+[2m[WebServer] [22mForbidden: /api/v1/notifications/
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 403 244
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "OPTIONS /api/v1/approval-cases/a5ec487c-b8d8-464e-bd70-3eb6fcad648e/approve/ HTTP/1.1" 200 0
+[2m[WebServer] [22mForbidden: /api/v1/approval-cases/a5ec487c-b8d8-464e-bd70-3eb6fcad648e/approve/
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "POST /api/v1/approval-cases/a5ec487c-b8d8-464e-bd70-3eb6fcad648e/approve/ HTTP/1.1" 403 243
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "POST /api/v1/auth/login/ HTTP/1.1" 200 1286
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "GET /api/v1/auth/me/ HTTP/1.1" 200 3482
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "GET /api/v1/dashboard/ HTTP/1.1" 200 1478
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "GET /api/v1/notifications/?read_status=unread&page_size=4 HTTP/1.1" 200 245
+[2m[WebServer] [22m[25/Jul/2026 03:20:31] "GET /api/v1/dashboard/ HTTP/1.1" 200 1478
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "GET /api/v1/loan-accounts/?page=1&page_size=20 HTTP/1.1" 200 1162
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "OPTIONS /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/direct-repayment-command/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "POST /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/direct-repayment-command/ HTTP/1.1" 200 1260
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "POST /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/direct-repayment-command/ HTTP/1.1" 200 1259
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "OPTIONS /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/repayments/ HTTP/1.1" 200 0
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "POST /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/repayments/ HTTP/1.1" 200 853
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "POST /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/repayments/ HTTP/1.1" 200 906
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "OPTIONS /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/interest-invoices/ HTTP/1.1" 200 0
+[2m[WebServer] [22mConflict: /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/interest-invoices/
+[2m[WebServer] [22m[25/Jul/2026 03:20:32] "POST /api/v1/loan-accounts/4a6ae485-95e9-4403-ba6d-712c6b49f166/interest-invoices/ HTTP/1.1" 409 250
+  ✘  1 [chromium] › critical-uat-smoke.e2e.spec.ts:26:5 › critical UAT tracer proves the automated public journeys and retains the manual boundary (13.2s)
+
+
+  1) [chromium] › critical-uat-smoke.e2e.spec.ts:26:5 › critical UAT tracer proves the automated public journeys and retains the manual boundary › UAT-014/015/016/017: direct/subsidiary receipts, interest, DPD, and replay safety 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m200[39m
+    Received: [31m409[39m
+
+      240 |       headers: { 'Idempotency-Key': 'critical-uat-interest-001' },
+      241 |     });
+    > 242 |     expect(invoice.status).toBe(200);
+          |                            ^
+      243 |     expect(invoice.data).toMatchObject({
+      244 |       loan_account_id: accountId,
+      245 |       financial_year: 'FY2026-27',
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_074057_normal_run/sfpcl-lms/e2e/critical-uat-smoke.e2e.spec.ts:242:28
+        at /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_074057_normal_run/sfpcl-lms/e2e/critical-uat-smoke.e2e.spec.ts:164:3
+
+  1 failed
+    [chromium] › critical-uat-smoke.e2e.spec.ts:26:5 › critical UAT tracer proves the automated public journeys and retains the manual boundary 
+
+Duration milliseconds: 75291
+Exit code: 1
+Screenshot evidence exit code: 1
+Screenshot manifest: /Users/amitkallapa/LMS/.ralph/worktrees/2026-07-25_074057_normal_run/.ralph/runs/2026-07-25_083817_repair/evidence/trusted-browser-screenshots-1.sha256

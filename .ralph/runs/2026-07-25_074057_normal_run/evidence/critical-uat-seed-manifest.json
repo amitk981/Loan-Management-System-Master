@@ -1,0 +1,17 @@
+{
+  "fixture_families": ["staff", "portal", "epic009", "critical"],
+  "critical_prejourney_commands": [
+    "seed_epic_009_e2e_fixture --make-ready",
+    "seed_epic_009_e2e_fixture --prepare-transfer",
+    "seed_critical_uat_e2e_fixture"
+  ],
+  "critical_actors": 2,
+  "repayment_schedules": 1,
+  "compliance_controls": 2,
+  "compliance_tasks": 2,
+  "accepted_compliance_evidence": 2,
+  "guarded": true,
+  "idempotent": true,
+  "live_providers": false,
+  "mid_journey_database_transitions": false
+}

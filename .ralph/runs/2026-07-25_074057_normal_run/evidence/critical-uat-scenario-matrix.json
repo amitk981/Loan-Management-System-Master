@@ -1,0 +1,25 @@
+{
+  "spec": "e2e/critical-uat-smoke.e2e.spec.ts",
+  "mapped_uat_ids": [
+    "UAT-001", "UAT-002", "UAT-003", "UAT-004", "UAT-005", "UAT-006",
+    "UAT-007", "UAT-008", "UAT-009", "UAT-010", "UAT-011", "UAT-012",
+    "UAT-013", "UAT-014", "UAT-015", "UAT-016", "UAT-017", "UAT-018",
+    "UAT-019", "UAT-020", "UAT-021", "UAT-022", "UAT-023", "UAT-024",
+    "UAT-025", "UAT-026"
+  ],
+  "automated_or_partial": [
+    "UAT-001", "UAT-006", "UAT-007", "UAT-008", "UAT-011", "UAT-012",
+    "UAT-013", "UAT-014", "UAT-015", "UAT-016", "UAT-017", "UAT-018",
+    "UAT-019", "UAT-020", "UAT-021", "UAT-022", "UAT-024", "UAT-025",
+    "UAT-026"
+  ],
+  "explicit_manual": [
+    "UAT-002", "UAT-003", "UAT-004", "UAT-005", "UAT-007", "UAT-008",
+    "UAT-009", "UAT-010", "UAT-019", "UAT-023"
+  ],
+  "trusted_browser_status": "pending independent trusted validation",
+  "required_screenshots": [
+    "critical-uat-standard-loan.png",
+    "critical-uat-permission-negative.png"
+  ]
+}

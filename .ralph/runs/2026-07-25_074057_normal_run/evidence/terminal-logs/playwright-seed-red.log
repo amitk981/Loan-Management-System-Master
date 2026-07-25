@@ -1,0 +1,45 @@
+
+> sfpcl-lms@1.0.0 test
+> vitest run src/playwright.seed.test.ts
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.6 <WORKTREE>/sfpcl-lms
+
+ ❯ src/playwright.seed.test.ts (4 tests | 1 failed) 5ms
+   ✓ Playwright fixture-family selection > provisions every family for ordinary full-suite collection 1ms
+   ✓ Playwright fixture-family selection > provisions only Epic 009 for its targeted trusted command 0ms
+   × Playwright fixture-family selection > provisions all public-boundary fixture families for the critical UAT suite 4ms
+     → expected [ 'staff', 'portal' ] to deeply equal [ 'staff', 'portal', 'epic009' ]
+   ✓ Playwright fixture-family selection > provisions the union when Epic 009 and another spec are selected 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/playwright.seed.test.ts > Playwright fixture-family selection > provisions all public-boundary fixture families for the critical UAT suite
+AssertionError: expected [ 'staff', 'portal' ] to deeply equal [ 'staff', 'portal', 'epic009' ]
+
+- Expected
++ Received
+
+  [
+    "staff",
+    "portal",
+-   "epic009",
+  ]
+
+ ❯ src/playwright.seed.test.ts:19:7
+     17|     expect(
+     18|       requiredFixtureFamilies(['e2e/critical-uat-smoke.e2e.spec.ts']),
+     19|     ).toEqual(['staff', 'portal', 'epic009']);
+       |       ^
+     20|   });
+     21| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  07:48:32
+   Duration  342ms (transform 22ms, setup 0ms, collect 17ms, tests 5ms, environment 0ms, prepare 39ms)
+

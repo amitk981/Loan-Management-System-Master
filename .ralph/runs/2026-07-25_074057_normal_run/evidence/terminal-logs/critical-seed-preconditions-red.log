@@ -1,0 +1,28 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+Catalogue seeded: 199 permissions, 20 roles, 8 teams, 274 role-permission links.
+Epic 009 E2E fixture seeded: completed SAP, sanctioned blocked account, Credit Manager, Senior Finance, and CFC actors.
+Critical UAT E2E fixture seeded.
+Critical UAT E2E fixture seeded.
+F
+======================================================================
+FAIL: test_seed_is_idempotent_and_builds_only_public_journey_preconditions (sfpcl_credit.tests.test_seed_critical_uat_e2e_fixture.CriticalUatE2eSeedTests.test_seed_is_idempotent_and_builds_only_public_journey_preconditions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_seed_critical_uat_e2e_fixture.py", line 35, in test_seed_is_idempotent_and_builds_only_public_journey_preconditions
+    self.assertEqual(counts, (2, 1, 2, 2))
+AssertionError: Tuples differ: (0, 0, 0, 0) != (2, 1, 2, 2)
+
+First differing element 0:
+0
+2
+
+- (0, 0, 0, 0)
++ (2, 1, 2, 2)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.309s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

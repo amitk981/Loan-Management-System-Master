@@ -358,14 +358,15 @@
     "011PE-grievance-audit-archive-frontend-wiring",
     "012DAA-reports-mis-frontend-wiring",
     "012DAB-report-and-register-export-frontend-wiring",
-    "012DAC-audit-explorer-and-observation-frontend-wiring"
+    "012DAC-audit-explorer-and-observation-frontend-wiring",
+    "012G-critical-e2e-uat-smoke-scenarios"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-25_072622_repair",
+  "last_run_id": "2026-07-25_101057_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 41,
+  "slices_completed_since_architecture_review": 42,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,

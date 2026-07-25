@@ -1,0 +1,7 @@
+
+> sfpcl-lms@1.0.0 e2e
+> playwright test --list e2e/critical-uat-smoke.e2e.spec.ts
+
+Listing tests:
+  [chromium] › critical-uat-smoke.e2e.spec.ts:27:5 › critical UAT tracer proves the automated public journeys and retains the manual boundary
+Total: 1 test in 1 file

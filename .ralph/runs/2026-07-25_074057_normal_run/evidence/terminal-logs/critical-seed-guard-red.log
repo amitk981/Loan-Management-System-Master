@@ -1,0 +1,33 @@
+Creating test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_seed_refuses_without_isolated_e2e_guards (sfpcl_credit.tests.test_seed_critical_uat_e2e_fixture.CriticalUatE2eSeedTests.test_seed_refuses_without_isolated_e2e_guards)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/core/management/__init__.py", line 110, in call_command
+    app_name = get_commands()[command_name]
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'seed_critical_uat_e2e_fixture'
+
+During handling of the above exception, another exception occurred:
+
+django.core.management.base.CommandError: Unknown command: 'seed_critical_uat_e2e_fixture'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<WORKTREE>/sfpcl_credit/tests/test_seed_critical_uat_e2e_fixture.py", line 8, in test_seed_refuses_without_isolated_e2e_guards
+    with self.assertRaisesMessage(CommandError, "isolated local Playwright"):
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/Users/amitkallapa/LMS/.ralph/venv/lib/python3.11/site-packages/django/test/testcases.py", line 742, in _assert_raises_or_warns_cm
+    self.assertIn(expected_message, str(getattr(cm, cm_attr)))
+AssertionError: 'isolated local Playwright' not found in "Unknown command: 'seed_critical_uat_e2e_fixture'"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...

@@ -1,7 +1,7 @@
 # Slice 012G: Critical E2E UAT Smoke Scenarios
 
 ## Status
-Not Started
+Complete
 
 ## Parent Epic
 Epic 012: Reports, Exports, Hardening, Regression, and UAT Readiness
