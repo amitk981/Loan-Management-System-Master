@@ -1,0 +1,21 @@
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 1.501s
+
+OK
+[PASS] packet structure, mappings, hashes, commit identity, freshness, readiness consistency, and redaction are valid
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/uat-review-packet.md: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/evidence-index.json: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/validate_uat_packet.py: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/deployment-smoke-status.json: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/exact-candidate-gates.md: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/performance-admission-status.md: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/release-promotion-status.md: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/report-reconciliation-status.md: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/security-status.json: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/uat-status.json: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/terminal-logs/uat-validator-review-findings-red.log: OK
+.ralph/runs/2026-07-25_134358_normal_run/evidence/terminal-logs/uat-validator-review-findings-green.log: OK
+4:Ready for independent validation
+FINAL_CANDIDATE_CHECK=PASS

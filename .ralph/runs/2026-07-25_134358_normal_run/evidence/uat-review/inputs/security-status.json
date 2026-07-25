@@ -1,0 +1,9 @@
+{
+  "source_run_id": "2026-07-24_174655_normal_run",
+  "source_commit": "8690cf46cb1809a2eb67e83b07a02d1fe0f3b240",
+  "original_sha256": "d84331b942ac2e3dd4960ff3d351cddc9a18299df64c5c1168927beb8bee3782",
+  "result": "FAIL",
+  "counts": {"pass": 52, "fail": 3, "skip": 0, "failed_scanners": 3},
+  "failing_controls": ["SEC-AUTH-010", "SEC-WEB-004", "SEC-WEB-005"],
+  "failing_scanners": ["detect-secrets", "npm-audit", "pip-audit"]
+}

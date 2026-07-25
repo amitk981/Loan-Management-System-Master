@@ -1,0 +1,13 @@
+c8163c5d9b1c77b34c58dfdabd1e3c5636afba994df0180f3dac808fe6ee56a5  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/uat-review-packet.md
+bc481d596eeafc443f29b03a40b873433eee297b8967ae83cd2092123fcb8f3d  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/evidence-index.json
+9a809b788281725fd75ae9afa1726226dc6cf69e5e9c93ba7db6ca6c88c15285  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/validate_uat_packet.py
+d30426f2712dbb82d12936557cbc26cf0030053b458fe2eea50ea37e3a6369c4  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py
+a9d0cd9c8b3b297d08230bd67498bd5ca971da418cd9e38e30e7544afef423f4  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/deployment-smoke-status.json
+0249c46f6933d7969883f59b0f76527ca997a5c9947190c1221db820335c6385  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/exact-candidate-gates.md
+f3f6401fa8892126d7e8cd4d34633f1696d0179c3de4697ffe62fa0a61e8c384  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/performance-admission-status.md
+02416c9f7bbb8379c03d2a82656189272741eb791f7215dfe3380d371328d082  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/release-promotion-status.md
+3a50e79c77bbc891c0bef28c3634774b2b61b150f21a7721fc77f16efaf1d4b1  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/report-reconciliation-status.md
+4535db64e0e60deacdbacac7dd0ec5935cae57b8067bedb0eeeb5da54dcf0c6a  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/security-status.json
+9f62f4a731f6b40f3bb55a4258adebdb26684d90c211c8e0fca9697c58bfc0f6  .ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/inputs/uat-status.json
+3226a763691e5ad3b4451e501d3b66320954d4153720a7214150246d69fc9b54  .ralph/runs/2026-07-25_134358_normal_run/evidence/terminal-logs/uat-validator-review-findings-red.log
+b045a2d90e7cdc35b50c9c286bb1632e915acf6d7579c4e2ffca8609d1dda638  .ralph/runs/2026-07-25_134358_normal_run/evidence/terminal-logs/uat-validator-review-findings-green.log

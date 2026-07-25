@@ -1,0 +1,10 @@
+{
+  "source_run_id": "2026-07-25_104405_normal_run",
+  "source_commit": "de37bf7b89a5dce21a1908e8b38a5c9cef81a638",
+  "original_sha256": "509a10cc6064bfa6f5a14a8166b90fe8f2c5e29bc90113c886afa3dd7659d971",
+  "result_for_source_commit": "PASS",
+  "result_for_candidate": "STALE_PASS",
+  "trusted_browser_runs_passed": 2,
+  "complete_screenshot_manifests": 2,
+  "environment_boundary": "Local isolated harness; not production-like staging identity"
+}

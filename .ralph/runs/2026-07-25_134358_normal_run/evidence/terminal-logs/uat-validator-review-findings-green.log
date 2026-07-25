@@ -1,0 +1,16 @@
+test_business_approval_requires_signed_business_slot (__main__.UatPacketValidatorTests.test_business_approval_requires_signed_business_slot) ... ok
+test_changed_evidence_hash_fails_closed (__main__.UatPacketValidatorTests.test_changed_evidence_hash_fails_closed) ... ok
+test_duplicate_or_unmapped_uat_script_fails_reconciliation (__main__.UatPacketValidatorTests.test_duplicate_or_unmapped_uat_script_fails_reconciliation) ... ok
+test_expired_evidence_fails_closed (__main__.UatPacketValidatorTests.test_expired_evidence_fails_closed) ... ok
+test_manifest_detects_tampered_human_packet (__main__.UatPacketValidatorTests.test_manifest_detects_tampered_human_packet) ... ok
+test_missing_evidence_file_fails_closed (__main__.UatPacketValidatorTests.test_missing_evidence_file_fails_closed) ... ok
+test_packet_redaction_rejects_sensitive_values_and_signed_urls (__main__.UatPacketValidatorTests.test_packet_redaction_rejects_sensitive_values_and_signed_urls) ... ok
+test_pass_status_requires_mapped_current_passing_evidence (__main__.UatPacketValidatorTests.test_pass_status_requires_mapped_current_passing_evidence) ... ok
+test_ready_claim_rejects_gate_defect_and_signoff_blockers (__main__.UatPacketValidatorTests.test_ready_claim_rejects_gate_defect_and_signoff_blockers) ... ok
+test_unmapped_qa_gate_fails_reconciliation (__main__.UatPacketValidatorTests.test_unmapped_qa_gate_fails_reconciliation) ... ok
+test_wrong_candidate_commit_fails_closed (__main__.UatPacketValidatorTests.test_wrong_candidate_commit_fails_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 1.579s
+
+OK

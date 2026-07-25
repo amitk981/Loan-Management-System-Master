@@ -1,0 +1,37 @@
+....FFFF..
+======================================================================
+FAIL: test_ready_claim_rejects_gate_defect_and_signoff_blockers (__main__.UatPacketValidatorTests.test_ready_claim_rejects_gate_defect_and_signoff_blockers) (name='mandatory skip')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py", line 400, in test_ready_claim_rejects_gate_defect_and_signoff_blockers
+    self.assertIn(expected_failure, completed.stdout)
+AssertionError: 'MANDATORY_GATE' not found in "[FAIL] UAT_RECONCILIATION: expected UAT-001..026 exactly once; missing=['UAT-001', 'UAT-002', 'UAT-003', 'UAT-004', 'UAT-005', 'UAT-006', 'UAT-007', 'UAT-008', 'UAT-009', 'UAT-010', 'UAT-011', 'UAT-012', 'UAT-013', 'UAT-014', 'UAT-015', 'UAT-016', 'UAT-017', 'UAT-018', 'UAT-019', 'UAT-020', 'UAT-021', 'UAT-022', 'UAT-023', 'UAT-024', 'UAT-025', 'UAT-026']; unknown=[]; rows=0\n[FAIL] GATE_RECONCILIATION: expected every QA/production/release gate exactly once; missing=['PROD-BACKUP-VERIFIED', 'PROD-BUSINESS-APPROVAL', 'PROD-MIGRATION-SIGNOFF', 'PROD-MONITORING-ACTIVE', 'PROD-QA-SIGNOFF', 'PROD-ROLLBACK-PLAN', 'PROD-SECURITY-SIGNOFF', 'PROD-SUPPORT-HYPERCARE', 'PROD-UAT-SIGNOFF', 'QA-ENTRY-API-SCHEMA', 'QA-ENTRY-KNOWN-ISSUES', 'QA-ENTRY-OBJECT-STORAGE', 'QA-ENTRY-RELEASE-NOTES', 'QA-ENTRY-SEED', 'QA-ENTRY-SMOKE', 'QA-ENTRY-USERS', 'QA-ENTRY-WORKERS', 'QA-EXIT-AUDIT', 'QA-EXIT-CORE-REGRESSION', 'QA-EXIT-FINANCIAL', 'QA-EXIT-INTEGRATION', 'QA-EXIT-P0', 'QA-EXIT-SECURITY', 'QA-EXIT-SEV1', 'QA-EXIT-SEV2', 'QA-EXIT-SUMMARY', 'RELEASE-CI-CANDIDATE', 'RELEASE-PERFORMANCE-ENVIRONMENT', 'RELEASE-PROMOTION', 'RELEASE-REPORT-RECONCILIATION', 'RELEASE-TRAINING']; unknown=[]; rows=1\n"
+
+======================================================================
+FAIL: test_ready_claim_rejects_gate_defect_and_signoff_blockers (__main__.UatPacketValidatorTests.test_ready_claim_rejects_gate_defect_and_signoff_blockers) (name='failed critical gate')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py", line 400, in test_ready_claim_rejects_gate_defect_and_signoff_blockers
+    self.assertIn(expected_failure, completed.stdout)
+AssertionError: 'MANDATORY_GATE' not found in "[FAIL] UAT_RECONCILIATION: expected UAT-001..026 exactly once; missing=['UAT-001', 'UAT-002', 'UAT-003', 'UAT-004', 'UAT-005', 'UAT-006', 'UAT-007', 'UAT-008', 'UAT-009', 'UAT-010', 'UAT-011', 'UAT-012', 'UAT-013', 'UAT-014', 'UAT-015', 'UAT-016', 'UAT-017', 'UAT-018', 'UAT-019', 'UAT-020', 'UAT-021', 'UAT-022', 'UAT-023', 'UAT-024', 'UAT-025', 'UAT-026']; unknown=[]; rows=0\n[FAIL] GATE_RECONCILIATION: expected every QA/production/release gate exactly once; missing=['PROD-BACKUP-VERIFIED', 'PROD-BUSINESS-APPROVAL', 'PROD-MIGRATION-SIGNOFF', 'PROD-MONITORING-ACTIVE', 'PROD-QA-SIGNOFF', 'PROD-ROLLBACK-PLAN', 'PROD-SECURITY-SIGNOFF', 'PROD-SUPPORT-HYPERCARE', 'PROD-UAT-SIGNOFF', 'QA-ENTRY-API-SCHEMA', 'QA-ENTRY-BUILD', 'QA-ENTRY-KNOWN-ISSUES', 'QA-ENTRY-OBJECT-STORAGE', 'QA-ENTRY-RELEASE-NOTES', 'QA-ENTRY-SEED', 'QA-ENTRY-SMOKE', 'QA-ENTRY-USERS', 'QA-ENTRY-WORKERS', 'QA-EXIT-AUDIT', 'QA-EXIT-CORE-REGRESSION', 'QA-EXIT-FINANCIAL', 'QA-EXIT-INTEGRATION', 'QA-EXIT-P0', 'QA-EXIT-SEV1', 'QA-EXIT-SEV2', 'QA-EXIT-SUMMARY', 'RELEASE-CI-CANDIDATE', 'RELEASE-PERFORMANCE-ENVIRONMENT', 'RELEASE-PROMOTION', 'RELEASE-REPORT-RECONCILIATION', 'RELEASE-TRAINING']; unknown=[]; rows=1\n"
+
+======================================================================
+FAIL: test_ready_claim_rejects_gate_defect_and_signoff_blockers (__main__.UatPacketValidatorTests.test_ready_claim_rejects_gate_defect_and_signoff_blockers) (name='open severity one defect')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py", line 400, in test_ready_claim_rejects_gate_defect_and_signoff_blockers
+    self.assertIn(expected_failure, completed.stdout)
+AssertionError: 'BLOCKING_DEFECT' not found in "[FAIL] UAT_RECONCILIATION: expected UAT-001..026 exactly once; missing=['UAT-001', 'UAT-002', 'UAT-003', 'UAT-004', 'UAT-005', 'UAT-006', 'UAT-007', 'UAT-008', 'UAT-009', 'UAT-010', 'UAT-011', 'UAT-012', 'UAT-013', 'UAT-014', 'UAT-015', 'UAT-016', 'UAT-017', 'UAT-018', 'UAT-019', 'UAT-020', 'UAT-021', 'UAT-022', 'UAT-023', 'UAT-024', 'UAT-025', 'UAT-026']; unknown=[]; rows=0\n[FAIL] GATE_RECONCILIATION: expected every QA/production/release gate exactly once; missing=['PROD-BACKUP-VERIFIED', 'PROD-BUSINESS-APPROVAL', 'PROD-MIGRATION-SIGNOFF', 'PROD-MONITORING-ACTIVE', 'PROD-QA-SIGNOFF', 'PROD-ROLLBACK-PLAN', 'PROD-SECURITY-SIGNOFF', 'PROD-SUPPORT-HYPERCARE', 'PROD-UAT-SIGNOFF', 'QA-ENTRY-API-SCHEMA', 'QA-ENTRY-BUILD', 'QA-ENTRY-KNOWN-ISSUES', 'QA-ENTRY-OBJECT-STORAGE', 'QA-ENTRY-RELEASE-NOTES', 'QA-ENTRY-SEED', 'QA-ENTRY-SMOKE', 'QA-ENTRY-USERS', 'QA-ENTRY-WORKERS', 'QA-EXIT-AUDIT', 'QA-EXIT-CORE-REGRESSION', 'QA-EXIT-FINANCIAL', 'QA-EXIT-INTEGRATION', 'QA-EXIT-P0', 'QA-EXIT-SECURITY', 'QA-EXIT-SEV1', 'QA-EXIT-SEV2', 'QA-EXIT-SUMMARY', 'RELEASE-CI-CANDIDATE', 'RELEASE-PERFORMANCE-ENVIRONMENT', 'RELEASE-PROMOTION', 'RELEASE-REPORT-RECONCILIATION', 'RELEASE-TRAINING']; unknown=[]; rows=0\n"
+
+======================================================================
+FAIL: test_ready_claim_rejects_gate_defect_and_signoff_blockers (__main__.UatPacketValidatorTests.test_ready_claim_rejects_gate_defect_and_signoff_blockers) (name='absent signoff')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py", line 400, in test_ready_claim_rejects_gate_defect_and_signoff_blockers
+    self.assertIn(expected_failure, completed.stdout)
+AssertionError: 'SIGNOFF_RECONCILIATION' not found in "[FAIL] UAT_RECONCILIATION: expected UAT-001..026 exactly once; missing=['UAT-001', 'UAT-002', 'UAT-003', 'UAT-004', 'UAT-005', 'UAT-006', 'UAT-007', 'UAT-008', 'UAT-009', 'UAT-010', 'UAT-011', 'UAT-012', 'UAT-013', 'UAT-014', 'UAT-015', 'UAT-016', 'UAT-017', 'UAT-018', 'UAT-019', 'UAT-020', 'UAT-021', 'UAT-022', 'UAT-023', 'UAT-024', 'UAT-025', 'UAT-026']; unknown=[]; rows=0\n[FAIL] GATE_RECONCILIATION: expected every QA/production/release gate exactly once; missing=['PROD-BACKUP-VERIFIED', 'PROD-BUSINESS-APPROVAL', 'PROD-MIGRATION-SIGNOFF', 'PROD-MONITORING-ACTIVE', 'PROD-QA-SIGNOFF', 'PROD-ROLLBACK-PLAN', 'PROD-SECURITY-SIGNOFF', 'PROD-SUPPORT-HYPERCARE', 'PROD-UAT-SIGNOFF', 'QA-ENTRY-API-SCHEMA', 'QA-ENTRY-BUILD', 'QA-ENTRY-KNOWN-ISSUES', 'QA-ENTRY-OBJECT-STORAGE', 'QA-ENTRY-RELEASE-NOTES', 'QA-ENTRY-SEED', 'QA-ENTRY-SMOKE', 'QA-ENTRY-USERS', 'QA-ENTRY-WORKERS', 'QA-EXIT-AUDIT', 'QA-EXIT-CORE-REGRESSION', 'QA-EXIT-FINANCIAL', 'QA-EXIT-INTEGRATION', 'QA-EXIT-P0', 'QA-EXIT-SECURITY', 'QA-EXIT-SEV1', 'QA-EXIT-SEV2', 'QA-EXIT-SUMMARY', 'RELEASE-CI-CANDIDATE', 'RELEASE-PERFORMANCE-ENVIRONMENT', 'RELEASE-PROMOTION', 'RELEASE-REPORT-RECONCILIATION', 'RELEASE-TRAINING']; unknown=[]; rows=0\n"
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.670s
+
+FAILED (failures=4)

@@ -1,0 +1,17 @@
+{
+  "source_run_id": "2026-07-25_074057_normal_run",
+  "source_commit": "099373bc3291341b1f32dc62ac0753436b33147e",
+  "matrix_original_sha256": "485cd562296da1f8ce34020d22fb3546abe9062a900a57ff9a7df752e75c7bc1",
+  "browser_original_sha256": "863cad2fdaa6b4f165656d97997401ca549ca0bcf8e263b474e52830b6ac2a61",
+  "mapped_uat_ids": "UAT-001..026",
+  "automated_or_partial_count": 19,
+  "explicit_manual_count": 10,
+  "business_signoffs": 0,
+  "trusted_browser": {
+    "result": "FAIL",
+    "runs_passed": 0,
+    "runs_failed": 1,
+    "runs_skipped": 1,
+    "complete_screenshot_manifests": 0
+  }
+}

@@ -1,0 +1,32 @@
+Repair target:
+  docs/working/FINAL_UAT_READINESS.md
+
+Authoritative red signal:
+  no-op-check-results.md: FAIL: the agent produced no changes outside .ralph/ bookkeeping.
+
+Focused packet-validator suite:
+  Ran 11 tests in 1.638s
+  OK
+  Final repeat: Ran 11 tests in 1.559s; OK
+
+Real packet validation:
+  [PASS] packet structure, mappings, hashes, commit identity, freshness,
+  readiness consistency, and redaction are valid
+
+SHA-256 manifest verification:
+  13 listed artifacts: OK
+
+Exact no-op check after repair:
+  PASS: the run produced real changes:
+  - docs/working/FINAL_UAT_READINESS.md
+
+Complete cheap candidate check after repair:
+  PASS: candidate is eligible for expensive validation gates.
+
+Durable-record redaction scan:
+  FINAL_UAT_READINESS_REDACTION=PASS
+
+Execution note:
+  The first direct function load used the workspace's zsh default and aborted before a validator
+  verdict because the Bash library variable `status` is read-only in zsh. The exact check was
+  immediately rerun under Bash, its declared interpreter family, and passed as recorded above.

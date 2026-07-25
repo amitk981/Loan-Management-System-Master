@@ -1,0 +1,13 @@
+.F..
+======================================================================
+FAIL: test_expired_evidence_fails_closed (__main__.UatPacketValidatorTests.test_expired_evidence_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py", line 269, in test_expired_evidence_fails_closed
+    self.assertNotEqual(completed.returncode, 0)
+AssertionError: 0 == 0
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.265s
+
+FAILED (failures=1)

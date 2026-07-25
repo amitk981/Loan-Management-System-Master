@@ -1,0 +1,13 @@
+....F.
+======================================================================
+FAIL: test_unmapped_qa_gate_fails_reconciliation (__main__.UatPacketValidatorTests.test_unmapped_qa_gate_fails_reconciliation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py", line 334, in test_unmapped_qa_gate_fails_reconciliation
+    self.assertIn("GATE_RECONCILIATION", completed.stdout)
+AssertionError: 'GATE_RECONCILIATION' not found in "[FAIL] UAT_RECONCILIATION: expected UAT-001..026 exactly once; missing=['UAT-001', 'UAT-002', 'UAT-003', 'UAT-004', 'UAT-005', 'UAT-006', 'UAT-007', 'UAT-008', 'UAT-009', 'UAT-010', 'UAT-011', 'UAT-012', 'UAT-013', 'UAT-014', 'UAT-015', 'UAT-016', 'UAT-017', 'UAT-018', 'UAT-019', 'UAT-020', 'UAT-021', 'UAT-022', 'UAT-023', 'UAT-024', 'UAT-025', 'UAT-026']; unknown=[]; rows=0\n"
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.432s
+
+FAILED (failures=1)

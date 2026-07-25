@@ -361,14 +361,15 @@
     "012DAC-audit-explorer-and-observation-frontend-wiring",
     "012G-critical-e2e-uat-smoke-scenarios",
     "012H-deployment-readiness-and-smoke-checks",
-    "012F3-soak-and-stress-release-evidence-admission"
+    "012F3-soak-and-stress-release-evidence-admission",
+    "012I-final-uat-review-packet"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-25_123004_normal_run",
+  "last_run_id": "2026-07-25_141715_repair",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 44,
+  "slices_completed_since_architecture_review": 45,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
@@ -377,7 +378,7 @@
   "architecture_review_clean_streak": 2,
   "architecture_review_completion_baseline": {
     "id": "original-product-tail-2026-07-22",
-    "status": "active",
+    "status": "awaiting_review",
     "frozen_at": "2026-07-22T08:34:42+05:30",
     "frozen_from": "owner decision after 315/354 completion snapshot",
     "slice_ids": [
@@ -601,5 +602,5 @@
     "attempt": 1,
     "status": "pending"
   },
-  "architecture_review_due_reason": "terminal_repair:ROOT-010-REMINDER-DELIVERY-OWNER+epic_boundary:003->010+epic_boundary:011->010"
+  "architecture_review_due_reason": "terminal_repair:ROOT-010-REMINDER-DELIVERY-OWNER+epic_boundary:003->010+epic_boundary:011->010+completion_baseline:original-product-tail-2026-07-22+epic_boundary:012->010"
 }

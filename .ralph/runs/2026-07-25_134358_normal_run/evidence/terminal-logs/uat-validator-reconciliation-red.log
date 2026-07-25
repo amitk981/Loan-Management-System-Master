@@ -1,0 +1,13 @@
+.F...
+======================================================================
+FAIL: test_duplicate_or_unmapped_uat_script_fails_reconciliation (__main__.UatPacketValidatorTests.test_duplicate_or_unmapped_uat_script_fails_reconciliation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/.ralph/runs/2026-07-25_134358_normal_run/evidence/uat-review/test_validate_uat_packet.py", line 309, in test_duplicate_or_unmapped_uat_script_fails_reconciliation
+    self.assertNotEqual(completed.returncode, 0)
+AssertionError: 0 == 0
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.350s
+
+FAILED (failures=1)
