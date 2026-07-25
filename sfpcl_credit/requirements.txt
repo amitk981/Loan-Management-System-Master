@@ -9,3 +9,5 @@ reportlab==4.4.4
 pypdf==6.1.1
 uharfbuzz==0.51.0
 celery==5.5.3
+gunicorn==23.0.0
+redis==5.2.1

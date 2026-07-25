@@ -110,12 +110,36 @@ MIDDLEWARE = [
 
 # SFPCL_DB_PATH lets a dev/E2E web server point at an isolated sqlite file
 # (e.g. the Playwright harness) without touching the default local dev DB.
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.environ.get("SFPCL_DB_PATH") or (BASE_DIR / "db.sqlite3"),
+# An explicit PostgreSQL host switches the complete runtime, including Docker,
+# to PostgreSQL without changing the isolated SQLite test/development default.
+if os.environ.get("SFPCL_POSTGRES_HOST"):
+    _postgres_database_name = os.environ.get("SFPCL_POSTGRES_DB", "sfpcl_credit")
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": _postgres_database_name,
+            "USER": os.environ.get("SFPCL_POSTGRES_USER", "postgres"),
+            "PASSWORD": os.environ.get("SFPCL_POSTGRES_PASSWORD", ""),
+            "HOST": os.environ["SFPCL_POSTGRES_HOST"],
+            "PORT": os.environ.get("SFPCL_POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": int(
+                os.environ.get("SFPCL_POSTGRES_CONN_MAX_AGE_SECONDS", "60")
+            ),
+            "TEST": {
+                "NAME": os.environ.get(
+                    "SFPCL_POSTGRES_TEST_DB",
+                    f"test_{_postgres_database_name}",
+                ),
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.environ.get("SFPCL_DB_PATH") or (BASE_DIR / "db.sqlite3"),
+        }
+    }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 USE_TZ = True

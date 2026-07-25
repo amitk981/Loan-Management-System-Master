@@ -1,0 +1,192 @@
+name: sfpcl-lms
+
+x-backend-environment: &backend-environment
+  SFPCL_DEPLOYMENT_ENVIRONMENT: development
+  SFPCL_DEBUG: "true"
+  SFPCL_ENABLE_DEMO_SURFACES: "true"
+  SFPCL_ALLOW_DEMO_SEED: ${SFPCL_ALLOW_DEMO_SEED:-false}
+  SFPCL_SECRET_KEY: ${SFPCL_SECRET_KEY:-local-docker-secret-key-not-for-production}
+  SFPCL_JWT_SIGNING_KEY: ${SFPCL_JWT_SIGNING_KEY:-local-docker-jwt-key-not-for-production}
+  SFPCL_ALLOWED_HOSTS: localhost,127.0.0.1,backend,frontend
+  SFPCL_CORS_ORIGINS: http://localhost:8080
+  SFPCL_POSTGRES_DB: ${SFPCL_POSTGRES_DB:-sfpcl_credit}
+  SFPCL_POSTGRES_USER: ${SFPCL_POSTGRES_USER:-sfpcl_app}
+  SFPCL_POSTGRES_PASSWORD: ${SFPCL_POSTGRES_PASSWORD:-sfpcl_local_password}
+  SFPCL_POSTGRES_HOST: postgres
+  SFPCL_POSTGRES_PORT: "5432"
+  SFPCL_CELERY_BROKER_URL: redis://redis:6379/0
+  SFPCL_CELERY_RESULT_BACKEND: redis://redis:6379/1
+  SFPCL_DOCUMENT_STORAGE_ROOT: /var/lib/sfpcl/storage/documents
+  SFPCL_REPORT_EXPORT_STORAGE_ROOT: /var/lib/sfpcl/storage/report-exports
+
+x-backend-service: &backend-service
+  image: sfpcl-lms-backend:local
+  init: true
+  environment: *backend-environment
+  volumes:
+    - app_storage:/var/lib/sfpcl/storage
+  networks:
+    - application
+
+services:
+  postgres:
+    image: postgres:16.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${SFPCL_POSTGRES_DB:-sfpcl_credit}
+      POSTGRES_USER: ${SFPCL_POSTGRES_USER:-sfpcl_app}
+      POSTGRES_PASSWORD: ${SFPCL_POSTGRES_PASSWORD:-sfpcl_local_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    networks:
+      - application
+
+  redis:
+    image: redis:7.4.1-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    networks:
+      - application
+
+  migrate:
+    <<: *backend-service
+    restart: "on-failure:3"
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        python sfpcl_credit/manage.py migrate --noinput
+        if [ "$${SFPCL_ALLOW_DEMO_SEED}" = "true" ]; then
+          python sfpcl_credit/manage.py seed_demo_users
+        fi
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    <<: *backend-service
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    command:
+      - gunicorn
+      - --bind=0.0.0.0:8000
+      - --workers=3
+      - --timeout=120
+      - --access-logfile=-
+      - --error-logfile=-
+      - sfpcl_credit.config.wsgi:application
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready/', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    networks:
+      application:
+        aliases:
+          - backend
+
+  worker:
+    <<: *backend-service
+    restart: unless-stopped
+    command:
+      - celery
+      - -A
+      - sfpcl_credit.config.celery:app
+      - worker
+      - --loglevel=INFO
+      - --hostname=worker@%h
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - celery -A sfpcl_credit.config.celery:app inspect ping --destination "worker@$${HOSTNAME}" --timeout 5 | grep -q pong
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  beat:
+    <<: *backend-service
+    restart: unless-stopped
+    command:
+      - celery
+      - -A
+      - sfpcl_credit.config.celery:app
+      - beat
+      - --loglevel=INFO
+      - --schedule=/tmp/celerybeat-schedule
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/celerybeat-schedule"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  frontend:
+    build:
+      context: sfpcl-lms
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /
+    image: sfpcl-lms-frontend:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${SFPCL_FRONTEND_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - application
+
+volumes:
+  postgres_data:
+  redis_data:
+  app_storage:
+
+networks:
+  application:
+    driver: bridge
