@@ -1,0 +1,15 @@
+Command (repository root):
+<ralph-venv>/bin/python sfpcl_credit/manage.py admit_release_evidence \
+  --bundle .ralph/runs/2026-07-25_123004_normal_run/evidence/environment-release-bundle.json \
+  --raw-root .ralph/runs/2026-07-25_123004_normal_run/evidence \
+  --expected-commit de37bf7b89a5dce21a1908e8b38a5c9cef81a638 \
+  --expected-environment staging-release-candidate \
+  --agreed-thresholds .ralph/runs/2026-07-25_123004_normal_run/evidence/agreed-thresholds.json \
+  --expected-thresholds-sha256 0000000000000000000000000000000000000000000000000000000000000000 \
+  --max-age-seconds 86400 \
+  --output .ralph/runs/2026-07-25_123004_normal_run/evidence/admitted-release-summary.json
+
+CommandError: invalid release evidence bundle: environment-release-bundle.json
+
+Exit status: 1 (expected fail-closed result)
+Admitted summary written: no

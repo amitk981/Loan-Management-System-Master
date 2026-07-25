@@ -1,0 +1,16 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+E
+======================================================================
+ERROR: test_complete_environment_bundle_is_admitted_and_reconciled (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_complete_environment_bundle_is_admitted_and_reconciled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 66, in test_complete_environment_bundle_is_admitted_and_reconciled
+    self.assertTrue(summary["release_ready"])
+                    ~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'release_ready'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (errors=1)

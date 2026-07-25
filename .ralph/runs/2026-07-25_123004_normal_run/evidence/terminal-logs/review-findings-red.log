@@ -1,0 +1,79 @@
+Found 4 test(s).
+System check identified no issues (0 silenced).
+FFFFFF
+======================================================================
+FAIL: test_each_result_must_be_fresh_and_post_smoke (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_each_result_must_be_fresh_and_post_smoke)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 527, in test_each_result_must_be_fresh_and_post_smoke
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_environment_threshold_is_evaluated_from_observations (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_environment_threshold_is_evaluated_from_observations)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 552, in test_environment_threshold_is_evaluated_from_observations
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_counts_and_measurements_are_enforced (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_counts_and_measurements_are_enforced) (name='performance')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 587, in test_counts_and_measurements_are_enforced
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_counts_and_measurements_are_enforced (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_counts_and_measurements_are_enforced) (name='soak-count')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 587, in test_counts_and_measurements_are_enforced
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_counts_and_measurements_are_enforced (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_counts_and_measurements_are_enforced) (name='soak-metric')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 587, in test_counts_and_measurements_are_enforced
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_raw_json_must_match_the_admitted_summary (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_raw_json_must_match_the_admitted_summary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 606, in test_raw_json_must_match_the_admitted_summary
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.045s
+
+FAILED (failures=6)

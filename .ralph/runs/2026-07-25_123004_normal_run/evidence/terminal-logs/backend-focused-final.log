@@ -1,0 +1,48 @@
+Creating test database for alias 'default'...
+Found 46 test(s).
+System check identified no issues (0 silenced).
+...........................performance_readiness result=fail sha256=75dffe3bf7762782230679001b4fa8cc6d09d7094e65eb453d00a06a6bd2f521
+...............PASS liveness
+PASS readiness
+PASS authentication
+PASS liveness
+PASS readiness
+PASS liveness
+PASS liveness
+PASS readiness
+..PASS liveness
+PASS readiness
+.E
+======================================================================
+ERROR: setUpClass (sfpcl_credit.tests.test_smoke_check_command.SmokeCheckLocalServerTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 1677, in setUpClass
+    cls._start_server_thread()
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 1694, in _start_server_thread
+    raise cls.server_thread.error
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 1603, in run
+    self.httpd = self._create_server(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 1619, in _create_server
+    return self.server_class(
+           ^^^^^^^^^^^^^^^^^^
+  File "<ralph-venv>/lib/python3.11/site-packages/django/core/servers/basehttp.py", line 92, in __init__
+    super().__init__(*args, **kwargs)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/core/servers/basehttp.py", line 77, in __init__
+    super().__init__(*args, **kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py", line 456, in __init__
+    self.server_bind()
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/wsgiref/simple_server.py", line 50, in server_bind
+    HTTPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/http/server.py", line 136, in server_bind
+    socketserver.TCPServer.server_bind(self)
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/socketserver.py", line 472, in server_bind
+    self.socket.bind(self.server_address)
+PermissionError: [Errno 1] Operation not permitted
+
+----------------------------------------------------------------------
+Ran 45 tests in 0.189s
+
+FAILED (errors=1)
+Destroying test database for alias 'default'...

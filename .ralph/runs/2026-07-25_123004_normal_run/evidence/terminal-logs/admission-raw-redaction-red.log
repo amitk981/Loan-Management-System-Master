@@ -1,0 +1,19 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_hash_valid_raw_result_with_sensitive_content_is_rejected (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_hash_valid_raw_result_with_sensitive_content_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 454, in test_hash_valid_raw_result_with_sensitive_content_is_rejected
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (failures=1)

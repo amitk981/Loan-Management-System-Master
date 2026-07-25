@@ -1,0 +1,67 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFFFF
+======================================================================
+FAIL: test_admission_reconciles_every_012f2_performance_result (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_admission_reconciles_every_012f2_performance_result) (name='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 202, in test_admission_reconciles_every_012f2_performance_result
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_admission_reconciles_every_012f2_performance_result (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_admission_reconciles_every_012f2_performance_result) (name='duplicate')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 202, in test_admission_reconciles_every_012f2_performance_result
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_admission_reconciles_every_012f2_performance_result (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_admission_reconciles_every_012f2_performance_result) (name='unknown')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 202, in test_admission_reconciles_every_012f2_performance_result
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_admission_reconciles_every_012f2_performance_result (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_admission_reconciles_every_012f2_performance_result) (name='changed-contract')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 202, in test_admission_reconciles_every_012f2_performance_result
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_admission_reconciles_every_012f2_performance_result (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_admission_reconciles_every_012f2_performance_result) (name='threshold-failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 202, in test_admission_reconciles_every_012f2_performance_result
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+FAILED (failures=5)

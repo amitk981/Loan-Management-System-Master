@@ -1,0 +1,43 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+FFF
+======================================================================
+FAIL: test_dataset_load_and_tool_manifests_are_mandatory (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_dataset_load_and_tool_manifests_are_mandatory) (name='dataset-counts')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 487, in test_dataset_load_and_tool_manifests_are_mandatory
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_dataset_load_and_tool_manifests_are_mandatory (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_dataset_load_and_tool_manifests_are_mandatory) (name='load-profile')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 487, in test_dataset_load_and_tool_manifests_are_mandatory
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+======================================================================
+FAIL: test_dataset_load_and_tool_manifests_are_mandatory (sfpcl_credit.tests.test_release_evidence_admission.ReleaseEvidenceAdmissionTests.test_dataset_load_and_tool_manifests_are_mandatory) (name='collector-version')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_release_evidence_admission.py", line 487, in test_dataset_load_and_tool_manifests_are_mandatory
+    with self.assertRaisesMessage(
+  File "/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: ReleaseEvidenceAdmissionError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.015s
+
+FAILED (failures=3)

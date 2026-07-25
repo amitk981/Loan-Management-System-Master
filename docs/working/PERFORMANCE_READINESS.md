@@ -104,6 +104,51 @@ tool/dataset manifests, environment identity, and raw hashes. A local smoke, cop
 shortened duration, skip, synthetic clock, failed threshold, data loss, or wrong commit is not
 admissible.
 
+## Terminal environment admission
+
+Slice 012F3 adds a separate, non-mutating admission command. It does not alter the 012F2 command,
+matrix, or bounded-local schema:
+
+```bash
+/Users/amitkallapa/LMS/.ralph/venv/bin/python sfpcl_credit/manage.py admit_release_evidence \
+  --bundle <environment-release-bundle.json> \
+  --raw-root <directory-containing-retained-raw-json> \
+  --expected-commit <40-character-deployed-candidate-commit> \
+  --expected-environment <exact-staging-environment-id> \
+  --agreed-thresholds <commit-and-environment-bound-thresholds.json> \
+  --expected-thresholds-sha256 <release-recorded-sha256> \
+  --max-age-seconds 86400 \
+  --output <admitted-release-summary.json>
+```
+
+The bundle has `schema_version: 1`, authority `environment-release-evidence`, and
+`synthetic: false`. It carries the exact staging candidate commit/environment, the passing 012H
+smoke completion time and raw hash, generation time, dataset/load manifest, collector/database/
+worker/Redis versions, 22 reconciled §24.1/PERF results, seven §24.3 results, and a 30-entry raw
+manifest (candidate smoke plus every performance/soak scenario). Each manifest path is relative to
+`--raw-root`; absolute paths, traversal, symlinks, missing files, byte-count drift, hash drift, and
+non-JSON raw results fail closed.
+
+The separately supplied agreed-threshold manifest is bound to the same commit/environment and to
+the SHA-256 recorded in the release invocation. Every environment-defined threshold in the bundle
+must match that trusted manifest exactly; the collector cannot relax its own threshold.
+
+All seven soak rows must be exact, passing, threshold-met, post-smoke, generated before bundle
+finalisation, and timed by `environment_monotonic_clock`. Intervals must be timezone-aware,
+forward-moving, and non-overlapping; their computed union must equal `actual_elapsed_seconds`.
+`PROBE-SUSTAINED-WORKFLOW` requires at least 14,400 computed seconds. The worker result rejects
+duplicate output, Redis requires equal before/after system-of-record hashes and zero data loss, and
+database pressure requires controlled degradation and recovery.
+
+Every §24.1/PERF row must preserve the 012F2 `source_load`, `measure`, and source threshold,
+provide counts/observations and any agreed environment threshold, and report both `status: pass`
+and `threshold_met: true`. Missing, duplicate, unknown, skipped, deferred, stale, synthetic,
+bounded-local, wrong-environment, wrong-commit, threshold-failed, or sensitive evidence returns a
+non-zero status and writes no admitted summary. Tests construct complete bundles with authority
+`synthetic-parser-fixture`; they can return only `synthetic-validation-pass` with
+`release_ready: false`. The production command accepts only `environment-release-evidence` with
+`synthetic: false`, so no test output is release evidence.
+
 Sources: `docs/source/test-plan.md` §24.1–24.3; `docs/source/implementation-roadmap.md` R8-E5 and
 R8-AC-004; `docs/source/screen-spec.md` §12.2; `docs/source/deployment-ops.md` §§7.3–7.6, 17, 24,
 29, and 32–33.

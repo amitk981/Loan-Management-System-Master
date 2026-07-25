@@ -360,14 +360,15 @@
     "012DAB-report-and-register-export-frontend-wiring",
     "012DAC-audit-explorer-and-observation-frontend-wiring",
     "012G-critical-e2e-uat-smoke-scenarios",
-    "012H-deployment-readiness-and-smoke-checks"
+    "012H-deployment-readiness-and-smoke-checks",
+    "012F3-soak-and-stress-release-evidence-admission"
   ],
   "failed_slices": [],
   "blocked_slices": [],
   "last_successful_commit": "e3d965ad",
-  "last_run_id": "2026-07-25_104405_normal_run",
+  "last_run_id": "2026-07-25_123004_normal_run",
   "last_run_status": "success",
-  "slices_completed_since_architecture_review": 43,
+  "slices_completed_since_architecture_review": 44,
   "architecture_review_due": true,
   "current_tool_preference": "codex",
   "retry_count": 0,
