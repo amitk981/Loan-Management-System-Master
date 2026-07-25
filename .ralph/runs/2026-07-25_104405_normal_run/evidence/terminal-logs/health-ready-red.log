@@ -1,0 +1,17 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_deployment_readiness_returns_ready_when_required_checks_pass (tests.test_health_api.HealthApiTests.test_deployment_readiness_returns_ready_when_required_checks_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_health_api.py", line 19, in test_deployment_readiness_returns_ready_when_required_checks_pass
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...

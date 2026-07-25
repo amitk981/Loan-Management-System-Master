@@ -1,0 +1,23 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+PASS liveness
+F
+======================================================================
+FAIL: test_smoke_check_fails_legibly_when_readiness_is_not_ready (tests.test_smoke_check_command.SmokeCheckCommandTests.test_smoke_check_fails_legibly_when_readiness_is_not_ready)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<python-stdlib>/unittest/mock.py", line 1369, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<worktree>/sfpcl_credit/tests/test_smoke_check_command.py", line 72, in test_smoke_check_fails_legibly_when_readiness_is_not_ready
+    with self.assertRaisesMessage(
+  File "<python-stdlib>/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "<ralph-venv>/lib/python3.11/site-packages/django/test/testcases.py", line 740, in _assert_raises_or_warns_cm
+    with func(expected_exception) as cm:
+AssertionError: CommandError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)

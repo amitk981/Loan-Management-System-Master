@@ -9,6 +9,7 @@ from django.test import override_settings
 from sfpcl_credit.applications.models import ApplicationDocument, LoanApplication
 from sfpcl_credit.configurations.models import LoanPolicyConfig
 from sfpcl_credit.credit.models import EligibilityAssessment
+from sfpcl_credit.deployment_smoke import REQUIRED_SMOKE_PERMISSIONS
 from sfpcl_credit.identity.models import AuditLog, Permission, RolePermission, User
 from sfpcl_credit.members.models import CropPlan, LandHolding, Member, Shareholding
 from sfpcl_credit.workflows.models import WorkflowEvent
@@ -17,6 +18,7 @@ from sfpcl_credit.workflows.models import WorkflowEvent
 TRACER_PERMISSION = "tracer.lifecycle.run"
 TRACER_EMAIL = "e2e.tracer@sfpcl.example"
 ZERO_EMAIL = "e2e.zero@sfpcl.example"
+SMOKE_EMAIL = "e2e.smoke@sfpcl.example"
 E2E_PASSWORD = "E2eTracer123!"
 EPIC_006_FINANCE_EMAIL = "e2e.credit.finance@sfpcl.example"
 EPIC_006_MANAGER_EMAIL = "e2e.credit.manager@sfpcl.example"
@@ -80,6 +82,25 @@ class SeedE2eUsersTests(TestCase):
         self.assertFalse(
             RolePermission.objects.filter(role=zero_user.primary_role).exists()
         )
+
+    def test_seed_creates_dedicated_low_privilege_smoke_reader(self):
+        call_command("seed_role_catalogue")
+        self._seed_e2e_users()
+
+        smoke_user = User.objects.get(email=SMOKE_EMAIL)
+        self.assertEqual(smoke_user.status, "active")
+        self.assertEqual(
+            smoke_user.primary_role.role_code,
+            "deployment_smoke_reader",
+        )
+        self.assertTrue(smoke_user.check_password(E2E_PASSWORD))
+        permission_codes = set(
+            Permission.objects.filter(
+                role_permissions__role=smoke_user.primary_role
+            ).values_list("permission_code", flat=True)
+        )
+        self.assertEqual(permission_codes, REQUIRED_SMOKE_PERMISSIONS)
+        self.assertNotIn("users.permission.assign", permission_codes)
 
     def test_seed_is_idempotent(self):
         self._seed_e2e_users()

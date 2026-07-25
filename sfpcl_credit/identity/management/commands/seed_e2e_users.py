@@ -12,6 +12,7 @@ from sfpcl_credit.configurations.models import LoanPolicyConfig
 from sfpcl_credit.compliance.models import ComplianceControl, ComplianceTask
 from sfpcl_credit.credit.models import EligibilityAssessment
 from sfpcl_credit.documents.models import DocumentFile
+from sfpcl_credit.deployment_smoke import REQUIRED_SMOKE_PERMISSIONS
 from sfpcl_credit.identity.models import (
     AuditLog,
     Permission,
@@ -39,6 +40,8 @@ TRACER_ROLE_CODE = "e2e_tracer"
 # restricted-UI browser checks (002EY req 9, 11).
 ZERO_USER_EMAIL = "e2e.zero@sfpcl.example"
 ZERO_ROLE_CODE = "it_head"
+SMOKE_USER_EMAIL = "e2e.smoke@sfpcl.example"
+SMOKE_ROLE_CODE = "deployment_smoke_reader"
 
 EPIC_006_FINANCE_EMAIL = "e2e.credit.finance@sfpcl.example"
 EPIC_006_MANAGER_EMAIL = "e2e.credit.manager@sfpcl.example"
@@ -112,6 +115,7 @@ class Command(BaseCommand):
             role_name="IT Head",
             description="Access control and system security oversight",
         )
+        smoke_role = self._ensure_smoke_role()
 
         tracer_user = self._ensure_user(
             email=TRACER_USER_EMAIL,
@@ -122,6 +126,11 @@ class Command(BaseCommand):
             email=ZERO_USER_EMAIL,
             full_name="E2E Zero Permission Staff",
             role=zero_role,
+        )
+        smoke_user = self._ensure_user(
+            email=SMOKE_USER_EMAIL,
+            full_name="E2E Deployment Smoke Reader",
+            role=smoke_role,
         )
         finance_role = self._ensure_credit_role(
             "deputy_manager_finance", "Deputy Manager – Finance",
@@ -148,6 +157,7 @@ class Command(BaseCommand):
             f"{tracer_user.email} (role {tracer_role.role_code}, "
             f"permission {TRACER_PERMISSION_CODE}); "
             f"{zero_user.email} (role {zero_role.role_code}, no permissions)."
+            f" {smoke_user.email} (dedicated read-only deployment smoke role)."
             f" Credit fixture: {EPIC_006_REFERENCE}, {finance_user.email}, "
             f"{manager_user.email}."
         )
@@ -220,6 +230,28 @@ class Command(BaseCommand):
                     "permission_name": permission_code,
                     "module_name": permission_code.split(".", 1)[0],
                     "risk_level": Permission.RISK_HIGH,
+                },
+            )
+            RolePermission.objects.get_or_create(role=role, permission=permission)
+        return role
+
+    @classmethod
+    def _ensure_smoke_role(cls):
+        role = cls._ensure_role(
+            SMOKE_ROLE_CODE,
+            role_name="Deployment Smoke Reader",
+            description="Dedicated read-only post-deployment smoke role.",
+        )
+        RolePermission.objects.filter(role=role).exclude(
+            permission__permission_code__in=REQUIRED_SMOKE_PERMISSIONS
+        ).delete()
+        for permission_code in sorted(REQUIRED_SMOKE_PERMISSIONS):
+            permission, _created = Permission.objects.get_or_create(
+                permission_code=permission_code,
+                defaults={
+                    "permission_name": permission_code,
+                    "module_name": permission_code.split(".", 1)[0],
+                    "risk_level": Permission.RISK_MEDIUM,
                 },
             )
             RolePermission.objects.get_or_create(role=role, permission=permission)

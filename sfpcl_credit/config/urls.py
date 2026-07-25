@@ -33,7 +33,13 @@ from sfpcl_credit.recovery import views as recovery_views
 from sfpcl_credit.reports import views as report_views
 from sfpcl_credit.security_instruments import views as security_instrument_views
 from sfpcl_credit.members import portal_views, views as member_views
-from sfpcl_credit.ops import deep_health, live_health, ready_health
+from sfpcl_credit.ops import (
+    deep_health,
+    deployment_live_health,
+    deployment_ready_health,
+    live_health,
+    ready_health,
+)
 from sfpcl_credit.search_views import global_search_results
 from sfpcl_credit.workflows import event_views, task_views
 
@@ -42,6 +48,8 @@ if settings.ENABLE_DEMO_SURFACES:
 
 
 urlpatterns = [
+    path("health/live/", deployment_live_health, name="deployment-health-live"),
+    path("health/ready/", deployment_ready_health, name="deployment-health-ready"),
     path("api/v1/tasks/", task_views.task_list, name="workflow-task-list"),
     path(
         "api/v1/tasks/<uuid:task_id>/reassign/",

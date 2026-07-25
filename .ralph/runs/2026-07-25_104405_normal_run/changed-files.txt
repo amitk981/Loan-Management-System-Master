@@ -1,0 +1,13 @@
+ M docs/working/API_CONTRACTS.md
+ M docs/working/ASSUMPTIONS.md
+ M sfpcl_credit/config/urls.py
+ M sfpcl_credit/dashboard/services.py
+ M sfpcl_credit/identity/management/commands/seed_e2e_users.py
+ M sfpcl_credit/ops.py
+ M sfpcl_credit/tests/test_health_api.py
+ M sfpcl_credit/tests/test_seed_e2e_users.py
+?? .ralph/runs/2026-07-25_104405_normal_run/
+?? sfpcl-lms/e2e/deployment-smoke-readiness.e2e.spec.ts
+?? sfpcl_credit/deployment_smoke.py
+?? sfpcl_credit/shared/management/commands/smoke_check.py
+?? sfpcl_credit/tests/test_smoke_check_command.py

@@ -1,0 +1,20 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_deployment_readiness_sanitizes_database_failure_during_migration_check (tests.test_health_api.HealthApiTests.test_deployment_readiness_sanitizes_database_failure_during_migration_check)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<python-stdlib>/unittest/mock.py", line 1369, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<worktree>/sfpcl_credit/tests/test_health_api.py", line 50, in test_deployment_readiness_sanitizes_database_failure_during_migration_check
+    self.assertEqual(response.status_code, 503)
+AssertionError: 500 != 503
+
+----------------------------------------------------------------------
+Ran 1 test in 0.018s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...

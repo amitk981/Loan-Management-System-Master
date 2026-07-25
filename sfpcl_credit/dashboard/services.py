@@ -269,6 +269,8 @@ def _role_context_for_user(user):
     role_code = user.primary_role.role_code if user.primary_role_id else ""
     if user.primary_role.status != "active":
         return None
+    if role_code == "deployment_smoke_reader":
+        return "compliance"
     return _ROLE_CONTEXTS.get(role_code)
 
 

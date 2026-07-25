@@ -1,0 +1,9 @@
+Using existing test database for alias 'default'...
+Found 10 test(s).
+System check identified no issues (0 silenced).
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 0.053s
+
+OK
+Preserving test database for alias 'default'...

@@ -640,7 +640,7 @@ are local/dev only; do not use or promote them as production credentials. Demo l
 
 | Contract Area | Status | Related Screens | Source Contract | Notes |
 |---|---|---|---|---|
-| Backend health endpoints | Implemented in slice 002A; envelope unified in 002C2 | None | `technical-architecture.md` R1 health checks; standard response envelope from `api-contracts.md` §6.1 | `GET /api/v1/health/live/`, `/ready/`, and `/deep/` return `{ success, data, meta }` via the shared envelope helper; `meta` now includes `request_id`, `timestamp`, and `api_version: "v1"`. Ready/deep include database connectivity status. |
+| Backend health endpoints | Deployment readiness completed in 012H; legacy API probes implemented in 002A/002C2 | None | `deployment-ops.md` §§20.1-20.3; `technical-architecture.md` R1; standard API envelope from `api-contracts.md` §6.1 | Infrastructure calls unauthenticated `GET /health/live/` and `/health/ready/` with the terse 012H contract below. Legacy `GET /api/v1/health/live/`, `/ready/`, and `/deep/` remain compatible and return `{ success, data, meta }`; they are not the deployment gate. |
 | Authentication and current user | Current-user implemented through slice 002D; frontend shell wired in 002E; member portal auth implemented in 005FA | Login, dashboards, MP00, MP01, MP02, MP25 | `docs/source/api-contracts.md`, `auth-permissions.md`, `screen-spec-member-portal.md` | Implemented `POST /api/v1/auth/login/`, `/refresh/`, `/logout/`, and `GET /api/v1/auth/me/` with standard envelopes, active-user-only access, refresh rotation, session revocation, role/team token claims, effective role permissions, current action availability, and auth audit logs for login/refresh/logout. 005FA adds portal activation/login/password-reset/password-change endpoints under `/api/v1/portal/auth/`; borrower access tokens and `/auth/me` include `member_id`, `portal_account_id`, and `portal_role = borrower_member` while exposing only portal own-data permissions, not staff completeness/deficiency permissions. The React shell now logs in staff through `/auth/login/`, member portal users through `/portal/auth/login/`, stores bearer/refresh tokens in local browser storage, loads `/auth/me/` before rendering protected navigation, clears local state on `TOKEN_EXPIRED`/`INVALID_TOKEN`, and posts the refresh token to `/auth/logout/`. Admin session controls remain future slices. |
 | Admin user management | Implemented in slice 002G; action-specific permission gating added in 002G2 | Admin User Management | `api-contracts.md` §6-7, §11.4, §12; `auth-permissions.md` §12.1, §15.12, §19 | `GET /api/v1/admin/users/`, `GET /api/v1/admin/users/{user_id}/`, and assignment action endpoints bind existing `Role`/`Team` catalogue rows only. All routes require session-bound bearer auth. Since 002G2 each action requires the specific canonical user-admin permission (`auth-permissions.md` §12.1), not just any user-admin grant: list/detail read requires `users.user.read` OR any write user-admin permission (read fallback per A-015 because seeded `system_admin` lacks `users.user.read`); role assignment and team add/remove require `users.user.update`; suspending a user requires `users.user.disable`; restoring a user to active requires `users.user.update`. A partial-permission actor receives `403 FORBIDDEN` with no `AuditLog` write and no session revocation. Order of checks: `401` (auth) → `403` (permission) → `400`/`404`. Successful role/team/status changes write `AuditLog`; suspending a user revokes active sessions; changing/suspending the last active `system_admin` is blocked per A-014. The frontend continues to map the write user-admin permissions to prototype `manage_users` for nav/route visibility. |
 | Early end-to-end tracer | Implemented in slice 002EX; production-isolated in 012E2 | Staff Tracer screen (development only) | `docs/source/api-contracts.md` §3-6; `docs/source/data-model.md` §26.1-26.2 | Thin dev proof only. The production settings module forces `ENABLE_DEMO_SURFACES=False`, omits the tracer app and every tracer URL, and therefore returns 404 without importing tracer views. Development endpoints remain protected by session-bound bearer auth and explicit `tracer.lifecycle.run` permission: `POST /api/v1/tracer/members/`, `POST /api/v1/tracer/members/{member_id}/loan-applications/`, `POST /api/v1/tracer/loan-applications/{loan_application_id}/sanction/`, `POST /api/v1/tracer/loan-applications/{loan_application_id}/loan-account/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/disburse/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/repayments/`, `POST /api/v1/tracer/loan-accounts/{loan_account_id}/close/`. Minimal models only; every transition writes `audit_logs` and `workflow_events`; invalid state transitions return `409 INVALID_STATE_TRANSITION`; missing/revoked auth returns the standard `401` envelope before domain writes. |
@@ -1663,6 +1663,28 @@ same `meta` keys — `request_id`, `timestamp`, `api_version` — matching `docs
 module, and translate known errors. `auth_service.validate_access_session` is the session-bound
 validator used by `GET /api/v1/auth/me/`, resolving A-008 for current-user reads: a logged-out,
 revoked, expired-session, or inactive-user access token cannot retrieve profile or permission data.
+
+## Deployment health endpoints (012H)
+
+These two infrastructure endpoints are deliberately outside `/api/v1/` and outside the shared
+business API envelope. They are unauthenticated, `GET`-only, contain no business data, and never
+return secret values, component versions, stack traces, SQL, file paths, or personal data.
+
+`GET /health/live/`
+
+- Performs no database or dependency query.
+- `200`: `{"status":"live"}`.
+
+`GET /health/ready/`
+
+- Cheaply verifies database connectivity, no unapplied Django migrations, and presence of the
+  application signing and field-encryption configuration needed by implemented request paths.
+- `200`: `{"status":"ready"}`.
+- `503`: `{"status":"not_ready","reason":"database_unavailable"}`.
+- `503`: `{"status":"not_ready","reason":"migrations_pending"}`.
+- `503`: `{"status":"not_ready","reason":"configuration_missing"}`.
+
+The failure reason is a stable machine-readable category, not an internal exception message.
 
 ## Current user response (002D3)
 

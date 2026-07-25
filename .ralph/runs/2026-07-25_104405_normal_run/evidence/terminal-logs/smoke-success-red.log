@@ -1,0 +1,15 @@
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_smoke_check_passes_using_only_authentication_and_read_requests (tests.test_smoke_check_command.SmokeCheckCommandTests.test_smoke_check_passes_using_only_authentication_and_read_requests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_smoke_check_command.py", line 210, in test_smoke_check_passes_using_only_authentication_and_read_requests
+    self.assertIn(
+AssertionError: 'Smoke check passed: 5 read-only workflows' not found in 'PASS liveness\nPASS readiness\nPASS authentication\nPASS workflow dashboard\nPASS workflow member directory\nPASS workflow loan applications\nPASS workflow approval cases\nPASS workflow loan accounts\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

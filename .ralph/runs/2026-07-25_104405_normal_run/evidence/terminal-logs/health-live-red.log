@@ -1,0 +1,17 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_deployment_liveness_is_minimal_and_does_not_query_database (tests.test_health_api.HealthApiTests.test_deployment_liveness_is_minimal_and_does_not_query_database)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<worktree>/sfpcl_credit/tests/test_health_api.py", line 12, in test_deployment_liveness_is_minimal_and_does_not_query_database
+    self.assertEqual(response.status_code, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...

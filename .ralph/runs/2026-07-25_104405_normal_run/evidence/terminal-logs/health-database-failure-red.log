@@ -1,0 +1,20 @@
+Using existing test database for alias 'default'...
+Found 1 test(s).
+System check identified no issues (0 silenced).
+F
+======================================================================
+FAIL: test_deployment_readiness_returns_terse_503_when_database_is_unavailable (tests.test_health_api.HealthApiTests.test_deployment_readiness_returns_terse_503_when_database_is_unavailable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<python-stdlib>/unittest/mock.py", line 1369, in patched
+    return func(*newargs, **newkeywargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<worktree>/sfpcl_credit/tests/test_health_api.py", line 34, in test_deployment_readiness_returns_terse_503_when_database_is_unavailable
+    self.assertEqual(response.status_code, 503)
+AssertionError: 500 != 503
+
+----------------------------------------------------------------------
+Ran 1 test in 0.022s
+
+FAILED (failures=1)
+Preserving test database for alias 'default'...

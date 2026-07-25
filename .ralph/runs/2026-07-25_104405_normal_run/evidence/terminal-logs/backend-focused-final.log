@@ -1,0 +1,21 @@
+Using existing test database for alias 'default'...
+Found 22 test(s).
+System check identified no issues (0 silenced).
+.............Catalogue seeded: 199 permissions, 20 roles, 8 teams, 274 role-permission links.
+E2E users seeded: e2e.tracer@sfpcl.example (role e2e_tracer, permission tracer.lifecycle.run); e2e.zero@sfpcl.example (role it_head, no permissions). e2e.smoke@sfpcl.example (dedicated read-only deployment smoke role). Credit fixture: LOE2E00601, e2e.credit.finance@sfpcl.example, e2e.credit.manager@sfpcl.example.
+.....PASS liveness
+PASS readiness
+PASS authentication
+PASS liveness
+PASS readiness
+PASS liveness
+PASS liveness
+PASS readiness
+..PASS liveness
+PASS readiness
+..
+----------------------------------------------------------------------
+Ran 22 tests in 0.810s
+
+OK
+Preserving test database for alias 'default'...

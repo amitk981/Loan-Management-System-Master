@@ -1,0 +1,17 @@
+Found 7 test(s).
+System check identified no issues (0 silenced).
+....PASS liveness
+PASS readiness
+PASS authentication
+PASS liveness
+PASS readiness
+PASS liveness
+PASS liveness
+PASS readiness
+..PASS liveness
+PASS readiness
+.
+----------------------------------------------------------------------
+Ran 7 tests in 0.005s
+
+OK
